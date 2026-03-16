@@ -1,15 +1,36 @@
 # Environment files
 .env
 .env.*
+*.env
 
-# VS Code
-.vscode/
-
-# Pylance / Python type checker caches
-.pyright/
-.basedpyright/
+# Virtual environments
+.venv/
+venv/
+env/
 
 # Python cache
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.basedpyright/
+
+# VS Code
+.vscode/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model files
+yolov8n.pt
+application/yolov8n.pt
