@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QTimer
 from camera import CameraWidget
-from database import add_classroom, get_classrooms_by_college_id,load_qss_file
+from database import add_classroom, get_classrooms_by_college_id,load_qss_file,startup_sync
 from PySide6.QtWidgets import QTimeEdit
 from PySide6.QtCore import QTime
 from PySide6.QtWidgets import QSizePolicy
@@ -146,6 +146,7 @@ class Dashboard(QWidget):
     def __init__(self, user_data):
         super().__init__()
         load_qss_file(self, "main_dashboard.qss")
+        startup_sync()
         self.user_data = user_data
         self.college_id = user_data["id"]
         self.user_name = user_data["creator"]
