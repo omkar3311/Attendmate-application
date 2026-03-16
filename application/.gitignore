@@ -1,0 +1,15 @@
+# Environment files
+.env
+.env.*
+
+# VS Code
+.vscode/
+
+# Pylance / Python type checker caches
+.pyright/
+.basedpyright/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class

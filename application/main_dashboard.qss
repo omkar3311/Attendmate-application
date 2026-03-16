@@ -1,0 +1,177 @@
+QWidget {
+    background-color: #f5f6f8;
+    color: #222222;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+}
+
+QScrollArea {
+    border: none;
+    background: transparent;
+}
+
+QLabel#navbarTitle {
+    font-size: 28px;
+    font-weight: 700;
+    padding: 10px 0px 10px 0px;
+    color: #111827;
+}
+
+QLabel {
+    background: transparent;
+    color: #222222;
+}
+
+QLabel#welcomeLabel {
+    font-size: 24px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    padding: 20px 0px 10px 0px;
+}
+
+QLabel[text^="CPU Usage"],
+QLabel[text^="RAM Usage"],
+QLabel[text^="Running Classrooms"],
+QLabel[text^="Status:"] {
+    background-color: #ffffff;
+    border: 1px solid #d9dde3;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-weight: 500;
+}
+
+QPushButton {
+    background-color: #ffffff;
+    color: #222222;
+    border: 1px solid #cfd5dc;
+    border-radius: 8px;
+    padding: 8px 14px;
+    min-height: 34px;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #f0f2f5;
+    border: 1px solid #bfc7d1;
+}
+
+QPushButton:pressed {
+    background-color: #e7eaee;
+}
+
+QPushButton[text="Add Camera"] {
+    background-color: #ffffff;
+    border: 2px dashed #c7ced6;
+    border-radius: 14px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #3a3a3a;
+    padding: 20px;
+}
+
+QPushButton[text="Add Camera"]:hover {
+    background-color: #f8f9fb;
+    border: 2px dashed #aeb7c2;
+}
+
+QPushButton[text="+"],
+QPushButton[text="-"] {
+    min-width: 35px;
+    max-width: 35px;
+    min-height: 32px;
+    max-height: 32px;
+    padding: 0px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+QPushButton[text="See Students"],
+QPushButton[text="Turn Camera OFF"],
+QPushButton[text="Turn Camera ON"] {
+    min-width: 135px;
+    max-width: 145px;
+    min-height: 34px;
+    max-height: 36px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QLineEdit {
+    background-color: #ffffff;
+    border: 1px solid #cfd5dc;
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #222222;
+}
+
+QLineEdit:focus {
+    border: 1px solid #9aa6b2;
+    background-color: #ffffff;
+}
+
+QDialog {
+    background-color: #f7f8fa;
+    border: 1px solid #d8dde3;
+    border-radius: 10px;
+}
+
+QMessageBox {
+    background-color: #f7f8fa;
+}
+
+QMessageBox QLabel {
+    color: #222222;
+}
+
+CameraWidget {
+    background-color: #ffffff;
+    border: 1px solid #d7dce2;
+    border-radius: 12px;
+}
+
+QLabel[text^="Class:"],
+QLabel[text="Checking slot..."],
+QLabel[text="Recognition ON"],
+QLabel[text="Recognition OFF"],
+QLabel[text="Camera OFF"] {
+    background-color: #ffffff;
+    border: 1px solid #e0e4e8;
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+QLabel[text="Starting camera..."],
+QLabel[text="Camera is OFF"] {
+    background-color: #f1f3f5;
+    border: 1px solid #cfd5dc;
+    border-radius: 10px;
+    color: #444444;
+}
+
+QScrollBar:vertical {
+    background: #f1f3f5;
+    width: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical {
+    background: #c5ccd4;
+    border-radius: 5px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #aeb7c2;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: transparent;
+}

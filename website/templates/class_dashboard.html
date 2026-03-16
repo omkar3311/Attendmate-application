@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Dashboard</title>
+    <link rel="icon" href="/static/icon.ico" type="image/x-icon">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #1e293b;
+            color: #fff;
+            padding: 22px;
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin: 0;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 6px;
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        .header-box {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+
+        .header-box h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #111827;
+        }
+
+        .header-box p {
+            margin: 6px 0;
+            color: #555;
+        }
+
+        .role-badge {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .left-actions,
+        .right-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #15803d;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #111;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-dark {
+            background: #1e293b;
+            color: white;
+        }
+
+        .btn-dark:hover {
+            background: #0f172a;
+        }
+
+        .link-panel {
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 20px;
+            margin-top: 22px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .link-panel h2 {
+            font-size: 22px;
+            margin-bottom: 14px;
+            color: #111827;
+        }
+
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .link-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .link-card h3 {
+            margin-bottom: 10px;
+            color: #1d4ed8;
+            font-size: 18px;
+        }
+
+        .link-box {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #333;
+            word-break: break-all;
+            margin-bottom: 12px;
+        }
+
+        .student-section-title {
+            font-size: 24px;
+            margin-bottom: 18px;
+            color: #111827;
+        }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .student-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: block;
+        }
+
+        .student-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+        }
+
+        .student-card img {
+            width: 130px;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 14px;
+            border: 3px solid #dbeafe;
+        }
+
+        .student-card h3 {
+            margin-bottom: 8px;
+            font-size: 20px;
+            color: #1d4ed8;
+        }
+
+        .student-card p {
+            margin: 6px 0;
+            color: #555;
+            font-size: 14px;
+            word-break: break-word;
+        }
+
+        .view-text {
+            margin-top: 12px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .empty-box {
+            background: white;
+            border-radius: 14px;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        }
+
+        .form-box {
+            display: none;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            color: #444;
+        }
+
+        .form-box.active {
+            display: block;
+        }
+
+        .form-box h2 {
+            margin-bottom: 8px;
+            color: #111827;
+        }
+
+        .form-subtitle {
+            margin-bottom: 14px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-top: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        .form-actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .message {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-weight: bold;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 18px;
+            }
+
+            .header-box,
+            .form-box {
+                padding: 18px;
+            }
+
+            .header-box h1 {
+                font-size: 24px;
+            }
+
+            .student-section-title {
+                font-size: 22px;
+            }
+
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .left-actions,
+            .right-actions {
+                width: 100%;
+            }
+
+            .left-actions .btn,
+            .right-actions .btn,
+            .form-actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AttendMate</h1>
+        <p>AI-Powered Live Attendance System</p>
+    </header>
+
+    <div class="container">
+
+        <div class="header-box">
+            <h1>{{ classroom.classroom_name | title }}</h1>
+            <p><strong>College:</strong> {{ college.college_name | title }}</p>
+            <p><strong>Total Students:</strong> {{ student_count }}</p>
+            <p><strong>Camera Source:</strong> {{ classroom.camera_input }}</p>
+
+            {% if current_role %}
+                <div class="role-badge">
+                    Logged in as {{ current_role | upper }}
+                </div>
+            {% endif %}
+
+            <div class="action-bar">
+                <div class="left-actions">
+                    <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+                    <button type="button" class="btn btn-primary" onclick="toggleStudentForm()">
+                        Add Student
+                    </button>
+                </div>
+
+                <div class="right-actions">
+                    <a href="/classroom/{{ classroom.id }}/export/csv" class="btn btn-success">
+                        Download CSV
+                    </a>
+                </div>
+            </div>
+
+            <div class="link-panel">
+                <h2>Invite Links</h2>
+    
+                <div class="link-grid">
+                    <div class="link-card">
+                        <h3>Student Join Link</h3>
+                        <div class="link-box" id="studentJoinLink">{{ student_join_link }}</div>
+                        <button type="button" class="btn btn-dark" onclick="copyText('studentJoinLink')">
+                            Copy Student Link
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if error_message %}
+            <div class="message error">{{ error_message }}</div>
+        {% endif %}
+
+        {% if success_message %}
+            <div class="message success">{{ success_message }}</div>
+        {% endif %}
+
+        <div id="studentFormBox" class="form-box">
+            <h2>Add Student</h2>
+            <p class="form-subtitle">
+                You can add student manually here, or just copy the student join link above and send it directly.
+            </p>
+
+            <form action="/classroom/{{ classroom.id }}/add-student" method="post" enctype="multipart/form-data">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="student_name">Student Name</label>
+                        <input type="text" id="student_name" name="student_name" placeholder="Enter student name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prn">PRN</label>
+                        <input type="text" id="prn" name="prn" placeholder="Enter student PRN" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="Enter student email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="text" id="password" name="password" placeholder="Enter student password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="image">Student Image</label>
+                        <input type="file" id="image" name="image" accept=".png,.jpg,.jpeg" required>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save Student</button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleStudentForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <h2 class="student-section-title">Students</h2>
+
+        {% if students %}
+            <div class="student-grid">
+                {% for student in students %}
+                    <a href="/student/view/{{ classroom.id }}/{{ student.prn }}" class="student-card">
+                        <img src="{{ student.img_url }}" alt="{{ student.student_name }}">
+                        <h3>{{ student.student_name | title }}</h3>
+                        <p><strong>PRN:</strong> {{ student.prn }}</p>
+                        <p><strong>Email:</strong> {{ student.email or "-" }}</p>
+                        <p class="view-text">Click to view student page</p>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-box">
+                No students found in this classroom.
+            </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        function toggleStudentForm() {
+            const formBox = document.getElementById("studentFormBox");
+            formBox.classList.toggle("active");
+        }
+
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    alert("Link copied");
+                })
+                .catch(() => {
+                    alert("Failed to copy link");
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Signup</title>
+    <link rel="icon" href="/static/icon.ico" type="image/x-icon">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #1e293b;
+            color: #fff;
+            padding: 22px;
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin: 0;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 6px;
+        }
+
+        .page-wrap {
+            min-height: calc(100vh - 96px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 520px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        .card h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #111827;
+        }
+
+        .card p {
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-weight: bold;
+            line-height: 1.6;
+        }
+
+        .message {
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-weight: bold;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .form-group input {
+            padding: 12px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .form-group input:focus {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: none;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        @media (max-width: 768px) {
+            .page-wrap {
+                padding: 18px;
+                align-items: flex-start;
+            }
+
+            .card {
+                padding: 22px 18px;
+                margin-top: 18px;
+            }
+
+            .card h1 {
+                font-size: 24px;
+            }
+
+            .btn-row {
+                flex-direction: column;
+            }
+
+            .btn-row .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AttendMate</h1>
+        <p>AI-Powered Live Attendance System</p>
+    </header>
+
+    <div class="page-wrap">
+        <div class="card">
+            <h1>Teacher Signup</h1>
+            <p>Use this invite page to create your teacher account for this college.</p>
+
+            <div class="info-box">
+                College ID: {{ college_id }}
+            </div>
+
+            {% if error %}
+                <div class="message error">{{ error }}</div>
+            {% endif %}
+
+            {% if success %}
+                <div class="message success">{{ success }}</div>
+            {% endif %}
+
+            <form action="/teacher/invite/{{ college_id }}" method="post">
+                <div class="form-group">
+                    <label for="teacher_name">Teacher Name</label>
+                    <input type="text" id="teacher_name" name="teacher_name" placeholder="Enter teacher name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="teacher_email">Email</label>
+                    <input type="email" id="teacher_email" name="teacher_email" placeholder="Enter teacher email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="teacher_password">Password</label>
+                    <input type="password" id="teacher_password" name="teacher_password" placeholder="Enter password" required>
+                </div>
+
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary">Create Teacher Account</button>
+                    <a href="/" class="btn btn-secondary">Back</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

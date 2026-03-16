@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AttendMate</title>
+    <link rel="icon" href="/static/icon.ico" type="image/x-icon">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background: radial-gradient(circle at top, #2c5364, #0f2027 70%);
+            color: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .ambient-bg span {
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            background: rgba(46, 204, 113, 0.18);
+            filter: blur(80px);
+            border-radius: 50%;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+
+        .ambient-bg span:nth-child(1) {
+            top: 10%;
+            left: 15%;
+        }
+
+        .ambient-bg span:nth-child(2) {
+            top: 60%;
+            left: 65%;
+            animation-duration: 25s;
+        }
+
+        .ambient-bg span:nth-child(3) {
+            top: 30%;
+            left: 45%;
+            animation-duration: 30s;
+        }
+
+        @keyframes float {
+            from {
+                transform: translateY(0) translateX(0);
+            }
+            to {
+                transform: translateY(-120px) translateX(80px);
+            }
+        }
+
+        .navbar {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .login-btn {
+            background: #46d782;
+            color: black;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            font-size: 14px;
+        }
+
+        .hero {
+            position: relative;
+            z-index: 2;
+            height: calc(100vh - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.35s ease;
+            animation: fadeUp 0.8s ease forwards;
+        }
+
+        .hero.shifted {
+            transform: translateX(-140px);
+            opacity: 0.25;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .brand-title {
+            font-size: 64px;
+            font-weight: 800;
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        .brand-title:hover {
+            transform: translateY(-6px);
+            text-shadow:
+                0 0 8px rgba(46, 204, 113, 0.6),
+                0 0 16px rgba(46, 204, 113, 0.4);
+        }
+
+        .hero p {
+            font-size: 18px;
+            opacity: 0.75;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .get-started {
+            background: #2ecc71;
+            color: black;
+            padding: 14px 32px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 14px;
+        }
+
+        .get-started:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.35);
+        }
+
+        .arrow {
+            font-size: 24px;
+            line-height: 1;
+            transition: transform 0.25s ease;
+        }
+
+        .get-started:hover .arrow {
+            transform: translateX(6px);
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            opacity: 0.5;
+            z-index: 2;
+        }
+
+        .side-panel {
+            position: fixed;
+            top: 0;
+            right: -460px;
+            width: 420px;
+            max-width: 100%;
+            height: 100vh;
+            background: #ffffff;
+            color: #111;
+            z-index: 5;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.25);
+            transition: right 0.35s ease;
+            padding: 28px 24px;
+            overflow-y: auto;
+        }
+
+        .side-panel.open {
+            right: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .close-btn {
+            background: #e5e7eb;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .panel-subtitle {
+            color: #4b5563;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .role-boxes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .role {
+            text-align: center;
+            padding: 10px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            background: #f9fafb;
+        }
+
+        .role.active {
+            background: #4ade80;
+            border-color: #22c55e;
+            color: #111827;
+        }
+
+        .mode-boxes {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .mode {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            background: #f9fafb;
+        }
+
+        .mode.active {
+            background: #dbeafe;
+            border-color: #60a5fa;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            outline: none;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            border-color: #2563eb;
+        }
+
+        .submit-btn {
+            width: 100%;
+            margin-top: 18px;
+            background: #22c55e;
+            border: none;
+            color: #111;
+            font-weight: 800;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .error-msg {
+            color: #b91c1c;
+            background: #fee2e2;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .success-msg {
+            color: #166534;
+            background: #dcfce7;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.32);
+            z-index: 4;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .backdrop.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .small-note {
+            margin-top: 12px;
+            color: #6b7280;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-bg">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div class="navbar">
+        <div class="logo">AttendMate</div>
+        <button class="login-btn" onclick="openPanel()">Login</button>
+    </div>
+
+    <div class="hero {% if open_panel %}shifted{% endif %}" id="hero">
+        <h1 class="brand-title">AttendMate</h1>
+        <p>Smart Attendance. Powered by AI.</p>
+        <div class="get-started" onclick="openPanel()">
+            Get Started <span class="arrow">👉</span>
+        </div>
+    </div>
+
+    <div class="backdrop {% if open_panel %}show{% endif %}" id="backdrop" onclick="closePanel()"></div>
+
+    <div class="side-panel {% if open_panel %}open{% endif %}" id="sidePanel">
+        <div class="panel-header">
+            <div class="panel-title">Welcome back</div>
+            <button class="close-btn" onclick="closePanel()">✕</button>
+        </div>
+
+        <div class="panel-subtitle">
+            Login or create access based on your role.
+        </div>
+
+        {% if error %}
+            <div class="error-msg">{{ error }}</div>
+        {% endif %}
+
+        {% if success %}
+            <div class="success-msg">{{ success }}</div>
+        {% endif %}
+
+        <div class="role-boxes">
+            <div id="studentRole" class="role" onclick="selectRole('student')">Student</div>
+            <div id="teacherRole" class="role" onclick="selectRole('teacher')">Teacher</div>
+            <div id="hodRole" class="role" onclick="selectRole('hod')">HOD / Principal</div>
+        </div>
+
+        <div class="mode-boxes" id="modeBoxes">
+            <div id="loginMode" class="mode" onclick="selectMode('login')">Login</div>
+            <div id="signupMode" class="mode" onclick="selectMode('signup')">Signup</div>
+        </div>
+
+        <form method="post" action="/auth" id="authForm">
+            <input type="hidden" name="role" id="role" value="student">
+            <input type="hidden" name="mode" id="mode" value="login">
+
+            <div id="studentFields">
+                <label>Name</label>
+                <input type="text" name="student_name" placeholder="Enter your name">
+
+                <label>Email</label>
+                <input type="email" name="student_email" placeholder="Enter your email">
+
+                <label>Password</label>
+                <input type="password" name="student_password" placeholder="Enter your password">
+
+                <label>College ID</label>
+                <input type="number" name="student_college_id" placeholder="Enter college id">
+
+                <label>Class ID</label>
+                <input type="number" name="student_classroom_id" placeholder="Enter class id">
+
+                <div class="small-note">
+                    Students can only log in if they already exist in the classroom student table.
+                </div>
+            </div>
+
+            <div id="teacherFields" class="hidden">
+                <label>College ID</label>
+                <input type="number" name="teacher_college_id" placeholder="Enter college id">
+
+                <label>Name</label>
+                <input type="text" name="teacher_name" placeholder="Enter your name">
+
+                <label>Email</label>
+                <input type="email" name="teacher_email" placeholder="Enter your email">
+
+                <label>Password</label>
+                <input type="password" name="teacher_password" placeholder="Enter your password">
+            </div>
+
+            <div id="hodLoginFields" class="hidden">
+                <label>Name</label>
+                <input type="text" name="hod_login_name" placeholder="Enter your name">
+
+                <label>College Name</label>
+                <input type="text" name="hod_login_college_name" placeholder="Enter college name">
+
+                <label>Email</label>
+                <input type="email" name="hod_login_email" placeholder="Enter your email">
+
+                <label>Password</label>
+                <input type="password" name="hod_login_password" placeholder="Enter your password">
+            </div>
+
+            <div id="hodSignupFields" class="hidden">
+                <label>Name</label>
+                <input type="text" name="hod_signup_name" placeholder="Enter your name">
+
+                <label>College Name</label>
+                <input type="text" name="hod_signup_college_name" placeholder="Enter college name">
+
+                <label>Email</label>
+                <input type="email" name="hod_signup_email" placeholder="Enter your email">
+
+                <label>Password</label>
+                <input type="password" name="hod_signup_password" placeholder="Create password">
+            </div>
+
+            <button class="submit-btn" type="submit" id="submitBtn">Continue</button>
+        </form>
+    </div>
+
+    <div class="footer">
+        © 2026 AttendMate
+    </div>
+
+    <script>
+        function openPanel() {
+            document.getElementById("sidePanel").classList.add("open");
+            document.getElementById("backdrop").classList.add("show");
+            document.getElementById("hero").classList.add("shifted");
+        }
+
+        function closePanel() {
+            document.getElementById("sidePanel").classList.remove("open");
+            document.getElementById("backdrop").classList.remove("show");
+            document.getElementById("hero").classList.remove("shifted");
+        }
+
+        function clearRequired() {
+            document.querySelectorAll("#authForm input").forEach(input => {
+                input.required = false;
+            });
+        }
+
+        function hideAllGroups() {
+            document.getElementById("studentFields").classList.add("hidden");
+            document.getElementById("teacherFields").classList.add("hidden");
+            document.getElementById("hodLoginFields").classList.add("hidden");
+            document.getElementById("hodSignupFields").classList.add("hidden");
+        }
+
+        function resetRoleUI() {
+            document.getElementById("studentRole").classList.remove("active");
+            document.getElementById("teacherRole").classList.remove("active");
+            document.getElementById("hodRole").classList.remove("active");
+        }
+
+        function resetModeUI() {
+            document.getElementById("loginMode").classList.remove("active");
+            document.getElementById("signupMode").classList.remove("active");
+        }
+
+        function selectRole(role) {
+            document.getElementById("role").value = role;
+            resetRoleUI();
+
+            if (role === "student") {
+                document.getElementById("studentRole").classList.add("active");
+                document.getElementById("mode").value = "login";
+                document.getElementById("modeBoxes").style.display = "none";
+                renderForm();
+            } else if (role === "teacher") {
+                document.getElementById("teacherRole").classList.add("active");
+                document.getElementById("mode").value = "login";
+                document.getElementById("modeBoxes").style.display = "none";
+                renderForm();
+            } else {
+                document.getElementById("hodRole").classList.add("active");
+                document.getElementById("modeBoxes").style.display = "flex";
+                renderForm();
+            }
+        }
+
+        function selectMode(mode) {
+            document.getElementById("mode").value = mode;
+            resetModeUI();
+
+            if (mode === "login") {
+                document.getElementById("loginMode").classList.add("active");
+            } else {
+                document.getElementById("signupMode").classList.add("active");
+            }
+
+            renderForm();
+        }
+
+        function renderForm() {
+            const role = document.getElementById("role").value;
+            const mode = document.getElementById("mode").value;
+
+            hideAllGroups();
+            clearRequired();
+
+            if (role === "student") {
+                const box = document.getElementById("studentFields");
+                box.classList.remove("hidden");
+                box.querySelectorAll("input").forEach(i => i.required = true);
+                document.getElementById("submitBtn").innerText = "Student Login";
+                return;
+            }
+
+            if (role === "teacher") {
+                const box = document.getElementById("teacherFields");
+                box.classList.remove("hidden");
+                box.querySelectorAll("input").forEach(i => i.required = true);
+                document.getElementById("submitBtn").innerText = "Teacher Login";
+                return;
+            }
+
+            if (role === "hod" && mode === "login") {
+                const box = document.getElementById("hodLoginFields");
+                box.classList.remove("hidden");
+                box.querySelectorAll("input").forEach(i => i.required = true);
+                document.getElementById("submitBtn").innerText = "HOD Login";
+                return;
+            }
+
+            if (role === "hod" && mode === "signup") {
+                const box = document.getElementById("hodSignupFields");
+                box.classList.remove("hidden");
+                box.querySelectorAll("input").forEach(i => i.required = true);
+                document.getElementById("submitBtn").innerText = "Create College Access";
+            }
+        }
+
+        window.onload = () => {
+            const shouldOpen = {{ "true" if open_panel else "false" }};
+            if (shouldOpen) {
+                openPanel();
+            }
+
+            const role = "{{ active_role or 'student' }}";
+            const mode = "{{ active_mode or 'login' }}";
+
+            selectRole(role);
+            if (role === "hod") {
+                selectMode(mode);
+            } else {
+                renderForm();
+            }
+        };
+    </script>
+</body>
+</html>

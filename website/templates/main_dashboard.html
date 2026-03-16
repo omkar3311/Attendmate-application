@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Dashboard</title>
+    <link rel="icon" href="/static/icon.ico" type="image/x-icon">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #1e293b;
+            color: #fff;
+            padding: 22px;
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin: 0;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 6px;
+        }
+
+        .container {
+            max-width: 1240px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        .topbar {
+            background: white;
+            padding: 22px;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            margin-bottom: 22px;
+        }
+
+        .topbar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-info {
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .topbar h1 {
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+
+        .topbar p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .stats {
+            margin-top: 12px;
+            font-weight: bold;
+            color: #111;
+        }
+
+        .topbar-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-start;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            margin-bottom: 18px;
+            font-size: 24px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: block;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+            font-size: 22px;
+            color: #1d4ed8;
+        }
+
+        .card p {
+            margin: 6px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .staff-card h3 {
+            color: #7c3aed;
+        }
+
+        .empty-box {
+            background: white;
+            border-radius: 14px;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            background: #1e293b;
+            color: white;
+            transition: 0.2s ease;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #0f172a;
+        }
+
+        .role-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 18px;
+            }
+
+            .topbar-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .topbar-actions {
+                justify-content: flex-start;
+                margin-top: 8px;
+            }
+
+            .topbar h1 {
+                font-size: 24px;
+            }
+
+            .section-title {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>AttendMate</h1>
+        <p>AI-Powered Live Attendance System</p>
+    </header>
+
+    <div class="container">
+
+        <div class="topbar">
+            <div class="topbar-header">
+                <div class="topbar-info">
+                    <h1>{{ college.college_name | title }} Dashboard</h1>
+                    <p><strong>Creator:</strong> {{ college.creator }}</p>
+                    <p><strong>Email:</strong> {{ college.creator_email }}</p>
+                    <p class="stats">Total Classrooms: {{ classroom_count }}</p>
+
+                    {% if current_role %}
+                        <div class="role-badge">
+                            Logged in as {{ current_role | upper }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="topbar-actions">
+                    <a href="/" class="btn">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        {% if current_role == "hod" %}
+        <div class="section">
+            <h2 class="section-title">Staff</h2>
+
+            <div class="grid">
+                <a href="/staff" class="card staff-card">
+                    <h3>Teachers / Staff</h3>
+                    <p><strong>Total Staff:</strong> {{ teacher_count }}</p>
+                    <p>Click to view all teachers and manage staff.</p>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="section">
+            <h2 class="section-title">Classrooms</h2>
+
+            {% if classrooms %}
+                <div class="grid">
+                    {% for classroom in classrooms %}
+                        <a href="/classroom/{{ classroom.id }}" class="card">
+                            <h3>{{ classroom.classroom_name | title }}</h3>
+                            <p><strong>Camera:</strong> {{ classroom.camera_input }}</p>
+                            <p><strong>Student Table:</strong> {{ classroom.classroom_table }}</p>
+                            <p><strong>Attendance Table:</strong> {{ classroom.attendance_table }}</p>
+                            <p><strong>Faces Folder:</strong> {{ classroom.classroom_faces }}</p>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-box">
+                    No classrooms found for this college.
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</body>
+</html>

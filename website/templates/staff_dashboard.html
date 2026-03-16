@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard</title>
+    <link rel="icon" href="/static/icon.ico" type="image/x-icon">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #222;
+        }
+
+        header {
+            background: #1e293b;
+            color: #fff;
+            padding: 22px;
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin: 0;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 6px;
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        .header-box {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+
+        .header-box h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #111827;
+        }
+
+        .header-box p {
+            margin: 6px 0;
+            color: #555;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .left-actions,
+        .right-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #15803d;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #111;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-dark {
+            background: #1e293b;
+            color: white;
+        }
+
+        .btn-dark:hover {
+            background: #0f172a;
+        }
+
+        .teacher-section-title {
+            font-size: 24px;
+            margin-bottom: 18px;
+            color: #111827;
+        }
+
+        .teacher-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .teacher-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .teacher-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+        }
+
+        .teacher-avatar {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 14px auto;
+            border-radius: 50%;
+            background: #dbeafe;
+            color: #1d4ed8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            font-weight: bold;
+        }
+
+        .teacher-card h3 {
+            margin-bottom: 8px;
+            font-size: 20px;
+            color: #1d4ed8;
+        }
+
+        .teacher-card p {
+            margin: 6px 0;
+            color: #555;
+            font-size: 14px;
+            word-break: break-word;
+        }
+
+        .role-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: #ede9fe;
+            color: #6d28d9;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .empty-box {
+            background: white;
+            border-radius: 14px;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        }
+
+        .invite-box {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+        }
+
+        .invite-box h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #111;
+        }
+
+        .invite-link {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 12px;
+            color: #333;
+            word-break: break-all;
+            margin-bottom: 12px;
+        }
+
+        .message {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-weight: bold;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .link-panel {
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 20px;
+            margin-top: 22px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .link-panel h2 {
+            font-size: 22px;
+            margin-bottom: 14px;
+            color: #111827;
+        }
+
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .link-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .link-card h3 {
+            margin-bottom: 10px;
+            color: #1d4ed8;
+            font-size: 18px;
+        }
+
+        .link-box {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #333;
+            word-break: break-all;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 18px;
+            }
+
+            .header-box {
+                padding: 18px;
+            }
+
+            .header-box h1 {
+                font-size: 24px;
+            }
+
+            .teacher-section-title {
+                font-size: 22px;
+            }
+
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .left-actions,
+            .right-actions {
+                width: 100%;
+            }
+
+            .left-actions .btn,
+            .right-actions .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AttendMate</h1>
+        <p>AI-Powered Live Attendance System</p>
+    </header>
+
+    <div class="container">
+
+        <div class="header-box">
+            <h1>Staff Dashboard</h1>
+            <p><strong>College:</strong> {{ college.college_name | title }}</p>
+            <p><strong>Total Staff:</strong> {{ teacher_count }}</p>
+
+            <div class="action-bar">
+                <div class="left-actions">
+                    <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+                </div>
+
+                <div class="right-actions">
+                    <button type="button" class="btn btn-success" onclick="copyTeacherInviteLink()">
+                        Copy Teacher Invite Link
+                    </button>
+                </div>
+            </div>
+
+            <div class="link-panel">
+                <h2>Invite Links</h2>
+    
+                <div class="link-grid">
+                    <div class="link-card">
+                        <h3>Teacher Join Link</h3>
+                        <div class="link-box" id="teacherInviteLink">{{ teacher_invite_link }}</div>
+                        <button type="button" class="btn btn-dark" onclick="copyTeacherInviteLink()">
+                            Copy Teacher Link
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if error_message %}
+            <div class="message error">{{ error_message }}</div>
+        {% endif %}
+
+        {% if success_message %}
+            <div class="message success">{{ success_message }}</div>
+        {% endif %}
+
+        <h2 class="teacher-section-title">Teachers</h2>
+
+        {% if teachers %}
+            <div class="teacher-grid">
+                {% for teacher in teachers %}
+                    <div class="teacher-card">
+                        <div class="teacher-avatar">
+                            {{ teacher.teacher_name[:1] | upper }}
+                        </div>
+                        <h3>{{ teacher.teacher_name | title }}</h3>
+                        <p><strong>Email:</strong> {{ teacher.email }}</p>
+                        <p><strong>College ID:</strong> {{ teacher.college_id }}</p>
+                        <span class="role-badge">{{ teacher.role | upper }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-box">
+                No teachers found for this college.
+            </div>
+        {% endif %}
+
+    </div>
+
+    <script>
+        function copyTeacherInviteLink() {
+            const text = document.getElementById("teacherInviteLink").innerText;
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    alert("Teacher invite link copied");
+                })
+                .catch(() => {
+                    alert("Failed to copy link");
+                });
+        }
+    </script>
+</body>
+</html>

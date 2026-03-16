@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <link rel="icon" href="/static/icon.ico" type="image/x-icon">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: #1f2937;
+            background:
+                radial-gradient(
+                    600px 400px at 10% 0%,
+                    rgba(46, 204, 113, 0.14),
+                    transparent 60%
+                ),
+                radial-gradient(
+                    500px 350px at 90% 15%,
+                    rgba(52, 211, 153, 0.12),
+                    transparent 55%
+                ),
+                linear-gradient(
+                    180deg,
+                    #f1f5f9 0%,
+                    #e2e8f0 100%
+                );
+            padding-bottom: 40px;
+        }
+
+        header {
+            background: #1e293b;
+            color: #fff;
+            padding: 14px 22px; /* reduced navbar height */
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+
+        header p {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+            margin-bottom: 0;
+        }
+
+        .content {
+            padding: 30px;
+            max-width: 1050px;
+            margin: auto;
+        }
+
+        .student-info-card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 18px;
+            padding: 24px;
+            margin-top: 26px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+        }
+
+        .student-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .student-left {
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .student-main h2 {
+            margin: 0 0 14px;
+            font-size: 28px;
+            color: #0f172a;
+        }
+
+        /* Student data in horizontal series */
+        .meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .meta-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            min-height: 72px;
+        }
+
+        .meta-box .label {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .meta-box .value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+            word-break: break-word;
+        }
+
+        .student-actions {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            min-width: 120px;
+        }
+
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 18px;
+            margin-top: 24px;
+        }
+
+        .summary-card {
+            padding: 14px 20px;
+            border-radius: 14px;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+        }
+
+        .summary-card .label {
+            display: block;
+            font-size: 0.88rem;
+            opacity: 0.8;
+        }
+
+        .summary-card .value {
+            font-size: 1.55rem;
+            margin-top: 6px;
+        }
+
+        .summary-card.present {
+            background: #e8faf0;
+            color: #15803d;
+        }
+
+        .summary-card.absent {
+            background: #fdecec;
+            color: #dc2626;
+        }
+
+        .summary-card.pending {
+            background: #fff7e6;
+            color: #b45309;
+        }
+
+        .summary-card.percent {
+            background: #eef4ff;
+            color: #2563eb;
+        }
+
+        .attendance-card {
+            margin-top: 28px;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+        }
+
+        .attendance-card h3 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            color: #0f172a;
+            font-size: 22px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 14px;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: center;
+        }
+
+        th {
+            background: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
+        }
+
+        tr:not(:last-child) td {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td.slot-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .status-badge {
+            display: inline-block;
+            min-width: 100px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: capitalize;
+        }
+
+        .status-present {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-absent {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .empty-box {
+            text-align: center;
+            padding: 40px 18px;
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 14px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 11px 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            background: #1e293b;
+            color: white;
+            transition: 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #0f172a;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 18px;
+            }
+
+            .student-main {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .student-actions {
+                justify-content: flex-start;
+                margin-top: 4px;
+            }
+
+            .student-main h2 {
+                font-size: 24px;
+            }
+
+            .attendance-card,
+            .student-info-card {
+                padding: 18px;
+            }
+
+            .meta {
+                grid-template-columns: 1fr;
+            }
+
+            th, td {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+        }
+       .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .chart-header h3 {
+            margin: 0;
+        }
+
+        .chart-nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            border: none;
+            background: #1e293b;
+            color: #fff;
+            padding: 9px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background: #0f172a;
+        }
+
+        .nav-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 320px;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .chart-nav {
+                width: 100%;
+            }
+
+            .nav-btn {
+                flex: 1;
+                text-align: center;
+            }
+
+            .chart-wrapper {
+                height: 260px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chart-wrapper {
+                height: 220px;
+            }
+        }  
+        .attendance-card1 {
+            margin-top: 28px;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+            max-width: 820px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>AttendMate</h1>
+    <p>AI-Powered Live Attendance System</p>
+</header>
+
+<div class="content">
+    <div class="student-info-card">
+        <div class="student-main">
+            <div class="student-left">
+                <h2>Welcome, {{ student_name }}</h2>
+
+                <div class="meta">
+                    <div class="meta-box">
+                        <span class="label">Email</span>
+                        <span class="value">{{ student_email }}</span>
+                    </div>
+                    <div class="meta-box">
+                        <span class="label">PRN</span>
+                        <span class="value">{{ student_prn }}</span>
+                    </div>
+                    <div class="meta-box">
+                        <span class="label">College ID</span>
+                        <span class="value">{{ college_id }}</span>
+                    </div>
+                    <div class="meta-box">
+                        <span class="label">Classroom ID</span>
+                        <span class="value">{{ classroom_id }}</span>
+                    </div>
+                    <div class="meta-box">
+                        <span class="label">Classroom</span>
+                        <span class="value">{{ classroom_name }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="student-actions">
+                <a href="/" class="btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="summary-strip">
+            <div class="summary-card present">
+                <span class="label">Present Slots</span>
+                <span class="value">{{ present_count }}</span>
+            </div>
+
+            <div class="summary-card absent">
+                <span class="label">Absent Slots</span>
+                <span class="value">{{ absent_count }}</span>
+            </div>
+
+            <div class="summary-card pending">
+                <span class="label">Pending Slots</span>
+                <span class="value">{{ pending_count }}</span>
+            </div>
+
+            <div class="summary-card percent">
+                <span class="label">Attendance %</span>
+                <span class="value">{{ attendance_percent }}%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="attendance-card1">
+        <div class="chart-header">
+            <h3>Attendance Overview Chart</h3>
+            <div class="chart-nav">
+                <button type="button" class="nav-btn" id="prevChart">Previous</button>
+                <button type="button" class="nav-btn" id="nextChart">Next</button>
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <canvas id="attendanceChart"></canvas>
+        </div>
+    </div>
+
+    {% if attendance %}
+        {% for date, slots in attendance.items() %}
+        <div class="attendance-card">
+            <h3>{{ date }}</h3>
+
+            <table>
+                <tr>
+                    <th>Slot</th>
+                    <th>Status</th>
+                </tr>
+
+                {% for row in slots %}
+                <tr>
+                    <td class="slot-name">{{ row.slot_label }}</td>
+                    <td>
+                        {% if row.status == "present" %}
+                            <span class="status-badge status-present">Present</span>
+                        {% elif row.status == "absent" %}
+                            <span class="status-badge status-absent">Absent</span>
+                        {% else %}
+                            <span class="status-badge status-pending">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="attendance-card">
+            <div class="empty-box">
+                No attendance data found for this student.
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const fullLabels = {{ chart_labels | tojson }};
+    const fullPresentData = {{ present_chart_data | tojson }};
+    const fullAbsentData = {{ absent_chart_data | tojson }};
+    const fullPendingData = {{ pending_chart_data | tojson }};
+
+    const ITEMS_PER_PAGE = 5;
+    let startIndex = 0;
+    let attendanceChart = null;
+
+    function getCurrentChartData() {
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+
+        return {
+            labels: fullLabels.slice(startIndex, endIndex),
+            present: fullPresentData.slice(startIndex, endIndex),
+            absent: fullAbsentData.slice(startIndex, endIndex),
+            pending: fullPendingData.slice(startIndex, endIndex),
+        };
+    }
+
+    function updateButtons() {
+        const prevBtn = document.getElementById("prevChart");
+        const nextBtn = document.getElementById("nextChart");
+
+        prevBtn.disabled = startIndex === 0;
+        nextBtn.disabled = startIndex + ITEMS_PER_PAGE >= fullLabels.length;
+    }
+
+    function renderChart() {
+        const current = getCurrentChartData();
+        const ctx = document.getElementById("attendanceChart").getContext("2d");
+
+        if (attendanceChart) {
+            attendanceChart.destroy();
+        }
+
+        attendanceChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: current.labels,
+                datasets: [
+                    {
+                        label: "Present",
+                        data: current.present,
+                        backgroundColor: "#22c55e",
+                        borderRadius: 6,
+                        borderSkipped: false
+                    },
+                    {
+                        label: "Absent",
+                        data: current.absent,
+                        backgroundColor: "#ef4444",
+                        borderRadius: 6,
+                        borderSkipped: false
+                    },
+                    {
+                        label: "Pending",
+                        data: current.pending,
+                        backgroundColor: "#f59e0b",
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: "top",
+                        labels: {
+                            boxWidth: 14,
+                            boxHeight: 14,
+                            padding: 14
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: "Date"
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Number of Slots"
+                        },
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+
+        updateButtons();
+    }
+
+    if (fullLabels.length > 0) {
+        renderChart();
+
+        document.getElementById("prevChart").addEventListener("click", function () {
+            if (startIndex - ITEMS_PER_PAGE >= 0) {
+                startIndex -= ITEMS_PER_PAGE;
+            } else {
+                startIndex = 0;
+            }
+            renderChart();
+        });
+
+        document.getElementById("nextChart").addEventListener("click", function () {
+            if (startIndex + ITEMS_PER_PAGE < fullLabels.length) {
+                startIndex += ITEMS_PER_PAGE;
+            }
+            renderChart();
+        });
+    } else {
+        document.getElementById("prevChart").disabled = true;
+        document.getElementById("nextChart").disabled = true;
+    }
+</script>
+</body>
+</html>

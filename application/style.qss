@@ -1,0 +1,68 @@
+QWidget {
+    background-color: #f5f6f8;
+    color: #222222;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+}
+
+QLabel {
+    background: transparent;
+    color: #222222;
+}
+
+QLabel#navbarTitle {
+    font-size: 28px;
+    font-weight: 700;
+    padding: 10px 0px 10px 0px;
+    color: #111827;
+}
+
+QFrame#loginCard {
+    background-color: #ffffff;
+    border: 1px solid #d9dde3;
+    border-radius: 14px;
+}
+
+QLabel#title {
+    font-size: 22px;
+    font-weight: 700;
+    padding-bottom: 8px;
+    color: #111827;
+}
+
+QLineEdit {
+    background-color: #ffffff;
+    border: 1px solid #cfd5dc;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #222222;
+}
+
+QLineEdit:focus {
+    border: 1px solid #9aa6b2;
+    background-color: #ffffff;
+}
+
+QPushButton {
+    background-color: #ffffff;
+    color: #222222;
+    border: 1px solid #cfd5dc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-height: 36px;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    background-color: #f0f2f5;
+    border: 1px solid #bfc7d1;
+}
+
+QPushButton:pressed {
+    background-color: #e7eaee;
+}
+
+QLabel#message {
+    font-size: 12px;
+    padding-top: 4px;
+}
