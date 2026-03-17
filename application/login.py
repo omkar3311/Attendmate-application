@@ -6,13 +6,35 @@ from PySide6.QtWidgets import (
     QPushButton,
     QHBoxLayout,
     QFrame,
-    QCompleter
+    QCompleter,QDialog
+    
 )
 from PySide6.QtCore import Qt
+from PySide6.QtCore import QThread, Signal
 from main_dashboard import Dashboard
-from database import check_college_login, get_college_names
+from database import check_college_login, get_college_names,startup_sync
 
+class LoadingDialog(QDialog):
+    def __init__(self):
+        super().__init__()
 
+        self.setWindowTitle("Please wait")
+        self.setFixedSize(300, 100)
+
+        layout = QVBoxLayout(self)
+
+        self.label = QLabel("Setting up your classrooms...")
+        self.label.setAlignment(Qt.AlignCenter)
+
+        layout.addWidget(self.label)
+
+class SyncWorker(QThread):
+    finished = Signal()
+
+    def run(self):
+        startup_sync()   
+        self.finished.emit()
+        
 class LoginPage(QWidget):
 
     def __init__(self):
@@ -100,9 +122,21 @@ class LoginPage(QWidget):
             self.message.setStyleSheet("color: lightgreen;")
             self.message.setText("Login successful")
 
-            self.dashboard = Dashboard(result)
-            self.dashboard.show()
-            self.close()
+            self.loading = LoadingDialog()
+
+            self.worker = SyncWorker()
+
+            def on_done():
+                self.loading.accept()  
+
+                self.dashboard = Dashboard(result)
+                self.dashboard.show()
+                self.close()
+
+            self.worker.finished.connect(on_done)
+
+            self.worker.start()
+            self.loading.exec()
         else:
             self.message.setStyleSheet("color: red;")
             self.message.setText("User not found or invalid credentials")
