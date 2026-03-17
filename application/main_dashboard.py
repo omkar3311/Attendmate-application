@@ -140,26 +140,25 @@ class CameraInputDialog(QDialog):
             slots
         )
         
-        
+
+       
 class Dashboard(QWidget):
 
     def __init__(self, user_data):
         super().__init__()
         load_qss_file(self, "main_dashboard.qss")
-        startup_sync()
         self.user_data = user_data
         self.college_id = user_data["id"]
         self.user_name = user_data["creator"]
-
+        
         self.setWindowTitle("AttendMate Dashboard")
         self.resize(1100, 700)
-
+        
         self.camera_count = 0
         self.camera_widgets = []
         self.pending_classrooms = []
 
         outer_layout = QVBoxLayout(self)
-
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         outer_layout.addWidget(self.scroll_area)
