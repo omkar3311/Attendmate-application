@@ -11,21 +11,201 @@ The goal of the project is to reduce manual attendance work, improve visibility 
 
 ---
 
+## Engineering Challenges Solved
+
+- Designed an offline-first system with sync queue to prevent data loss
+- Managed multiple camera streams using QThread without UI blocking
+- Implemented safe thread shutdown to avoid crashes during deletion
+- Built dynamic table system for scalable classroom isolation
+- Handled real-time recognition with controlled database writes
+
+---
+
 ## Overview
 
 AttendMate has two main modules:
 
 ### 1. Desktop Application
-The desktop application is used for live classroom monitoring and attendance marking.
+The desktop application is the core engine of AttendMate and is responsible for real-time attendance processing and classroom control.
+
+It is designed with a **local-first architecture**, ensuring the system continues to work even without internet connectivity.
 
 It:
-- connects to classroom cameras
-- checks whether a classroom slot is currently active
-- runs face recognition on the camera feed
-- detects recognized students in real time
-- automatically marks attendance for the active slot
-- allows classroom editing and student addition directly from the desktop interface
+- connects to classroom cameras (IP or local devices)
+- validates active classroom slots before enabling recognition
+- runs face recognition on live video streams
+- detects and tracks students in real time
+- marks attendance automatically at fixed intervals
+- supports multiple classroom monitoring with controlled resource usage
+- allows classroom creation, editing, and deletion
+- supports student enrollment with image-based recognition
+- provides real-time visibility of recognized and unknown individuals
+- ensures smooth UI interaction using background threads
 
+---
+
+### ⚙️ Local-First Database Architecture
+
+The application uses a **dual-database system**:
+
+#### Local PostgreSQL Database
+- primary database for all operations
+- stores classrooms, students, attendance, and sync queue
+- enables full offline functionality
+
+#### Cloud Database (Supabase)
+- used for backup and synchronization
+- receives updates when internet is available
+
+---
+
+### 🔄 Smart Sync System
+
+AttendMate includes a **robust sync engine**:
+
+- operations are stored in a local `sync_queue`
+- when internet is available:
+  - pending operations are pushed to Supabase
+  - attendance data is synchronized date-wise
+- supports:
+  - classroom creation/update
+  - student insertion
+  - attendance sync
+  - image uploads
+
+This ensures:
+- no data loss during network failure
+- seamless transition between offline and online modes
+
+---
+
+### 🧠 Dynamic Table System
+
+Each classroom dynamically creates:
+
+- a **student table**
+- an **attendance table**
+
+This allows:
+- isolated classroom data
+- scalable design
+- flexible schema per classroom
+
+Attendance tables:
+- automatically create slot-based columns
+- enforce `(PRN, date)` uniqueness
+- support per-slot attendance tracking
+
+---
+
+### 🎥 Multi-Camera Processing Engine
+
+- each classroom runs in a **separate QThread**
+- prevents UI blocking
+- supports parallel camera feeds
+- dynamically enables/disables recognition based on time slots
+- ensures safe shutdown of threads during deletion
+
+---
+
+### ⚡ Background Task Handling
+
+Heavy operations are executed using worker threads:
+
+- adding classrooms
+- adding students (with image processing)
+- deleting classrooms (including table cleanup)
+- syncing data
+
+This ensures:
+- no UI freezing
+- smooth user experience
+- responsive dashboard
+
+---
+
+### 🧾 Classroom Lifecycle Management
+
+Users can:
+
+- create classrooms with:
+  - name
+  - camera source
+  - time slots
+- edit classroom configuration
+- delete classroom safely:
+  - removes cloud data first
+  - drops local and cloud tables
+  - stops running camera threads
+  - updates dashboard instantly
+
+---
+
+### 👨‍🎓 Student Management System
+
+- add students with:
+  - name, PRN, email, password
+  - image (stored locally + optionally synced to cloud)
+- automatic face data reload after insertion
+- per-classroom student isolation
+- real-time recognition updates in UI
+
+---
+
+### 📊 Attendance Engine
+
+- runs only during active slots
+- collects recognized student identities
+- writes attendance periodically (interval-based)
+- prevents duplicate writes using unique constraints
+- supports slot-wise attendance marking
+- syncs attendance data to cloud when available
+
+---
+
+### 🧠 Resource-Aware Execution
+
+The system actively monitors:
+
+- CPU usage
+- RAM usage
+
+Based on this:
+- delays loading new cameras
+- prevents system overload
+- ensures stable performance even with multiple classrooms
+
+---
+
+### 🖥️ Real-Time Dashboard Features
+
+- live camera feed display
+- recognition status (ON/OFF)
+- recognized vs unknown tracking
+- camera toggle (ON/OFF)
+- instant classroom removal without restart
+- smooth UI updates via signal-based architecture
+
+---
+
+### 🔐 Reliability Features
+
+- safe thread shutdown (prevents crashes)
+- exception handling in camera workers
+- offline-first operation
+- controlled sync retries
+- consistent state between UI and database
+
+---
+
+[Camera] → [Recognition Engine] → [Local DB] → [Sync Queue] → [Supabase]
+
+                ↓
+            [Desktop UI]
+
+[Web App] → [Supabase] → [Dashboard / Reports]
+
+---
 ### 2. Web Application
 The web application is used for administration and attendance monitoring.
 
@@ -471,22 +651,6 @@ It helps make attendance:
 - easier to monitor
 - easier to manage
 - more useful for reporting
-
----
-
-## Resume-Friendly Project Description
-
-### Short Version
-Built an AI-powered attendance management system using face recognition and FastAPI, with a desktop application for automated attendance capture and a web dashboard for managing students, teachers, classrooms, and attendance records.
-
-### Detailed Version
-Developed a smart attendance management platform with two integrated modules: a PySide6-based desktop application that uses live camera input, slot-aware attendance logic, and face recognition for automated attendance marking, and a FastAPI-based web application that supports HOD, teacher, and student workflows including onboarding, classroom management, attendance dashboards, chart visualization, and CSV export.
-
----
-
-## Final Note
-
-AttendMate is a strong project that blends AI, desktop development, backend logic, and web-based management into one system. It can serve as a portfolio project, academic project, or a base for building a more production-ready attendance platform.
 
 --- 
 
