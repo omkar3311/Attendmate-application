@@ -17,6 +17,12 @@ QLabel#navbarTitle {
     color: #111827;
 }
 
+#footer {
+    font-size: 12px;
+    color: #94a3b8;
+    padding: 10px;
+}
+
 QLabel {
     background: transparent;
     color: #222222;

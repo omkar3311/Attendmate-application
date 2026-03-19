@@ -282,11 +282,13 @@ class Student(QWidget):
                 font-size: 14px;
             }
         """)
-
+        self.footer = QLabel("© 2025 AttendMate")
+        self.footer.setObjectName("footer")
+        self.footer.setAlignment(Qt.AlignCenter)
         main_layout.addLayout(left_layout, 2)
         main_layout.addWidget(self.table, 1)
-
         outer_layout.addLayout(main_layout)
+        outer_layout.addWidget(self.footer)
 
         self.setLayout(outer_layout)
 

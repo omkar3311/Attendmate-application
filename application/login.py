@@ -81,6 +81,9 @@ class LoginPage(QWidget):
 
         self.message = QLabel("")
         self.message.setObjectName("message")
+        self.footer = QLabel("© 2025 AttendMate")
+        self.footer.setObjectName("footer")
+        self.footer.setAlignment(Qt.AlignCenter)
 
         card_layout.addWidget(self.label)
         card_layout.addWidget(self.name)
@@ -89,6 +92,7 @@ class LoginPage(QWidget):
         card_layout.addWidget(self.password)
         card_layout.addWidget(self.button)
         card_layout.addWidget(self.message)
+        card_layout.addWidget(self.footer)
 
         self.card.setLayout(card_layout)
 

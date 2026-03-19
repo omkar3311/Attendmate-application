@@ -189,7 +189,7 @@ class Dashboard(QWidget):
         self.ram_label = QLabel("RAM Usage: 0%")
         self.camera_label = QLabel("Running Classrooms: 0")
         self.status_label = QLabel("Status: Safe")
-
+        
         self.cpu_label.setFixedHeight(25)
         self.ram_label.setFixedHeight(25)
         self.camera_label.setFixedHeight(25)
@@ -212,11 +212,18 @@ class Dashboard(QWidget):
         self.grid_layout.setRowStretch(3, 1)
         self.grid_layout.setSpacing(10)
 
-        self.main_layout.addLayout(self.grid_layout, 1)
+        self.main_layout.addLayout(self.grid_layout)
+        self.main_layout.addStretch()
 
+        self.footer = QLabel("© 2025 AttendMate")
+        self.footer.setObjectName("footer")
+        self.footer.setAlignment(Qt.AlignCenter)
+        self.footer.setMinimumHeight(30)
+
+        self.main_layout.addWidget(self.footer)
         self.setLayout(self.main_layout)
 
-        self.add_button = QPushButton("Add Camera")
+        self.add_button = QPushButton("Add Class")
         self.add_button.setFixedSize(360, 200)
         self.add_button.clicked.connect(self.ask_camera)
         self.resource_timer = QTimer()
@@ -329,15 +336,15 @@ class Dashboard(QWidget):
         self.place_add_button()
 
 
-# app = QApplication(sys.argv)
+app = QApplication(sys.argv)
 
-# user_data = {
-#     "id": 1,
-#     "email": "omkar@gmail.com",
-#     "creator": "omkar",
-#     "username": "omkar"
-# }
-# window = Dashboard(user_data)
-# window.show()
+user_data = {
+    "id": 1,
+    "email": "omkar@gmail.com",
+    "creator": "omkar",
+    "username": "omkar"
+}
+window = Dashboard(user_data)
+window.show()
 
-# app.exec()
+app.exec()
