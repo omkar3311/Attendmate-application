@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import (
+    QApplication,
     QWidget, QLabel, QHBoxLayout, QVBoxLayout, QTableWidget,
     QTableWidgetItem, QPushButton, QDialog, QLineEdit,
     QFileDialog, QMessageBox
@@ -11,7 +12,7 @@ import json
 from database import (
     add_student_to_classroom,
     get_classroom_full_data_by_name,
-    update_classroom,load_qss_file
+    update_classroom,load_qss_file,delete_classroom
 )
 from recognition import reload_known_faces
 
@@ -218,10 +219,12 @@ class AddStudentWorker(QObject):
 
 
 class Student(QWidget):
+    classroom_deleted = Signal()
     def __init__(self, camera_source, class_name):
         super().__init__()
 
         load_qss_file(self, "student_dashboard.qss")
+        classroom_deleted = Signal()
         self.camera_source = camera_source
         self.class_name = class_name
 
@@ -269,7 +272,12 @@ class Student(QWidget):
         left_layout.addWidget(self.status_label)
 
         left_layout.addStretch()
-
+        
+        self.delete_classroom_btn = QPushButton("Delete Classroom")
+        self.delete_classroom_btn.setFixedHeight(42)
+        self.delete_classroom_btn.clicked.connect(self.delete_classroom)
+        left_layout.addWidget(self.delete_classroom_btn)
+        
         self.table = QTableWidget()
         self.table.setColumnCount(2)
         self.table.setHorizontalHeaderLabels(["Track ID", "PRN / Name"])
@@ -298,6 +306,42 @@ class Student(QWidget):
         self.add_student_thread = None
         self.add_student_worker = None
 
+    def delete_classroom(self):
+        classroom_data = get_classroom_full_data_by_name(self.class_name)
+
+        if not classroom_data:
+            QMessageBox.critical(self, "Error", "Classroom not found")
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            "Are you sure?\n\nThis will DELETE ALL data permanently.\nNo backup.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        # show progress
+        self.status_label.setText("Deleting classroom...")
+        self.delete_classroom_btn.setEnabled(False)
+
+        QApplication.processEvents()  # refresh UI
+
+        success, message = delete_classroom(classroom_data["id"])
+
+        if success:
+            QMessageBox.information(self, "Success", "Classroom deleted successfully")
+            self.classroom_deleted.emit()   # 🔥 notify dashboard
+            # close this window (back to dashboard)
+            self.close()
+
+        else:
+            QMessageBox.critical(self, "Error", message)
+            self.delete_classroom_btn.setEnabled(True)
+            self.status_label.setText("")
+    
     def open_edit_classroom_dialog(self):
         classroom_data = get_classroom_full_data_by_name(self.class_name)
 

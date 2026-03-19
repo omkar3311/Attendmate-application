@@ -97,11 +97,14 @@ class CameraWorker(QThread):
 
                 if now - self.last_db_write >= self.db_write_interval:
                     try:
-                        ok = mark_attendance_for_slot(
-                            self.class_name,
-                            self.recognized_students
-                        )
-
+                        try:
+                            ok = mark_attendance_for_slot(
+                                self.class_name,
+                                self.recognized_students
+                            )
+                        except Exception as e:
+                            print("Attendance skipped (class deleted):", e)
+                            ok = False
                         if ok:
                             print(f"[Attendance] Updated for {self.class_name}")
 
@@ -134,9 +137,9 @@ class CameraWorker(QThread):
 
 
 class CameraWidget(QWidget):
+    classroom_deleted = Signal(str)
     def __init__(self, camera_source, class_name, slots=None):
         super().__init__()
-
         self.camera_source = camera_source
         self.class_name = class_name
         self.slots = slots or []
@@ -269,10 +272,23 @@ class CameraWidget(QWidget):
         if self.student_page is None:
             self.student_page = Student(self.camera_source, self.class_name)
 
+            # 🔥 connect delete signal
+            self.student_page.classroom_deleted.connect(self.handle_classroom_deleted)
+
         self.student_page.show()
         self.student_page.raise_()
         self.student_page.activateWindow()
 
+    def handle_classroom_deleted(self):
+    # 🔥 stop thread FIRST
+        self.worker.stop()
+
+        # emit to dashboard
+        self.classroom_deleted.emit(self.class_name)
+
+        # close safely
+        self.close()
+    
     def closeEvent(self, event):
         self.worker.stop()
 

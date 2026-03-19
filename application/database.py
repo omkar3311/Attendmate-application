@@ -3465,6 +3465,37 @@ def add_classroom(college_id, classroom_name, camera_input, slots):
             conn.close()
 
 
+def get_classroom_full_data_by_name_by_id(classroom_id):
+    conn = None
+    cur = None
+
+    try:
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, classroom_table, attendance_table
+            FROM public.classrooms
+            WHERE id = %s
+            LIMIT 1
+        """, (classroom_id,))
+
+        row = cur.fetchone()
+        if not row:
+            return None
+
+        return {
+            "id": row[0],
+            "classroom_table": row[1],
+            "attendance_table": row[2]
+        }
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 def get_classroom_data_by_name(class_name):
     conn = None
     cur = None
@@ -3592,6 +3623,92 @@ def get_classrooms_by_college_id(college_id):
         if conn:
             conn.close()
 
+def delete_classroom(classroom_id):
+    conn = None
+    cur = None
+
+    try:
+        # ❗ STEP 1: Check cloud availability
+        if not is_supabase_available():
+            print("Supabase not available — abort delete")
+            return False, "No internet / Cloud Storage unavailable"
+
+        # ❗ STEP 2: Get classroom data
+        data = get_classroom_full_data_by_name_by_id(classroom_id)
+        if not data:
+            return False, "Classroom not found"
+
+        classroom_table = data["classroom_table"]
+        attendance_table = data["attendance_table"]
+
+        # =========================================
+        # 🔥 STEP 3: DELETE FROM SUPABASE FIRST
+        # =========================================
+        try:
+            cloud_conn = get_cloud_pg_connection()
+            cloud_cur = cloud_conn.cursor()
+
+            cloud_cur.execute(sql.SQL(
+                "DROP TABLE IF EXISTS public.{} CASCADE"
+            ).format(sql.Identifier(classroom_table)))
+
+            cloud_cur.execute(sql.SQL(
+                "DROP TABLE IF EXISTS public.{} CASCADE"
+            ).format(sql.Identifier(attendance_table)))
+
+            cloud_cur.execute("""
+                DELETE FROM public.classrooms
+                WHERE id = %s
+            """, (classroom_id,))
+
+            cloud_conn.commit()
+
+        except Exception as e:
+            print("Cloud delete failed:", e)
+            return False, "Cloud delete failed"
+
+        finally:
+            if cloud_cur:
+                cloud_cur.close()
+            if cloud_conn:
+                cloud_conn.close()
+
+        # =========================================
+        # 🔥 STEP 4: DELETE LOCAL
+        # =========================================
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        # drop tables
+        cur.execute(sql.SQL("DROP TABLE IF EXISTS public.{} CASCADE").format(
+            sql.Identifier(classroom_table)
+        ))
+
+        cur.execute(sql.SQL("DROP TABLE IF EXISTS public.{} CASCADE").format(
+            sql.Identifier(attendance_table)
+        ))
+
+        # delete classroom row
+        cur.execute("""
+            DELETE FROM public.classrooms
+            WHERE id = %s
+        """, (classroom_id,))
+
+        conn.commit()
+
+        return True, "Deleted successfully"
+
+    except Exception as e:
+        print("Delete error:", e)
+        if conn:
+            conn.rollback()
+        return False, str(e)
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 def update_classroom(classroom_id, classroom_name, camera_input, slots):
     conn = None
