@@ -34,3 +34,9 @@ Thumbs.db
 # Model files
 yolov8n.pt
 application/yolov8n.pt
+
+# Local runtime storage (IMPORTANT)
+application/local_filestore/
+
+# Optional: ignore all face datasets if needed
+application/faces/
