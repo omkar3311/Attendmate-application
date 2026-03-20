@@ -17,6 +17,14 @@ QLabel#navbarTitle {
     color: #111827;
 }
 
+#systemStatus,#syncStatus {
+    background-color: #ffffff;
+    border: 1px solid #d9dde3;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-weight: 500;
+}
+
 #footer {
     font-size: 12px;
     color: #94a3b8;

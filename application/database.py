@@ -2654,6 +2654,27 @@ def table_exists_in_connection(conn, table_name):
         if cur:
             cur.close()
 
+def get_sync_status():
+    try:
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT COUNT(*) 
+            FROM public.sync_queue 
+            WHERE status IN ('pending', 'failed')
+        """)
+
+        count = cur.fetchone()[0]
+
+        cur.close()
+        conn.close()
+
+        return count
+
+    except Exception as e:
+        print("Error getting sync status:", e)
+        return -1
 
 # ==================================================
 # LOCAL DATABASE INIT

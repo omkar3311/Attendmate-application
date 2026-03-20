@@ -17,6 +17,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtCore import QTimer,QThread
 from camera import CameraWidget
 from database import add_classroom, get_classrooms_by_college_id,load_qss_file,startup_sync
+from database import get_sync_status, is_supabase_available
 from PySide6.QtWidgets import QTimeEdit
 from PySide6.QtCore import QTime
 from PySide6.QtWidgets import QSizePolicy
@@ -227,7 +228,7 @@ class Dashboard(QWidget):
         
         self.name = QLabel(f"Welcome {self.user_name}")
         self.name.setObjectName("welcomeLabel")
-        self.name.setMinimumHeight(45)  
+        # self.name.setMinimumHeight(45)  
         self.main_layout.addWidget(self.name)
 
         self.resource_layout = QHBoxLayout()
@@ -236,18 +237,24 @@ class Dashboard(QWidget):
         self.cpu_label = QLabel("CPU Usage: 0%")
         self.ram_label = QLabel("RAM Usage: 0%")
         self.camera_label = QLabel("Running Classrooms: 0")
-        self.status_label = QLabel("Status: Safe")
-        
-        self.cpu_label.setFixedHeight(25)
-        self.ram_label.setFixedHeight(25)
-        self.camera_label.setFixedHeight(25)
-        self.status_label.setFixedHeight(25)
+        # self.status_label = QLabel("Status: Safe")
+        self.system_status_label = QLabel("● Safe")
+        self.system_status_label.setObjectName("systemStatus")
 
-        self.resource_layout.addWidget(self.status_label)
+        self.sync_status_label = QLabel("● Synced")
+        self.sync_status_label.setObjectName("syncStatus")
+        
+        # self.cpu_label.setFixedHeight(25)
+        # self.ram_label.setFixedHeight(25)
+        # self.camera_label.setFixedHeight(25)
+        # self.system_status_label.setFixedHeight(25)
+
+        self.resource_layout.addWidget(self.system_status_label)
         self.resource_layout.addWidget(self.cpu_label)
         self.resource_layout.addWidget(self.ram_label)
         self.resource_layout.addWidget(self.camera_label)
-        self.resource_layout.addStretch()   
+        self.resource_layout.addWidget(self.sync_status_label)
+        self.resource_layout.addStretch()
 
         self.main_layout.addLayout(self.resource_layout)
 
@@ -289,15 +296,50 @@ class Dashboard(QWidget):
         self.ram_label.setText(f"RAM Usage: {ram}%")
         self.camera_label.setText(f"Running Classrooms: {len(self.camera_widgets)}")
 
+        # =========================
+        # 🔥 SYSTEM LOAD STATUS
+        # =========================
         if cpu > 85 or ram > 85:
-            self.status_label.setText("Status: High Load")
-            self.status_label.setStyleSheet("color: red; font-weight: bold;")
+            self.system_status_label.setText("● High Load")
+            color = "red"
         elif cpu > 70 or ram > 70:
-            self.status_label.setText("Status: Moderate Load")
-            self.status_label.setStyleSheet("color: orange; font-weight: bold;")
+            self.system_status_label.setText("● Moderate")
+            color = "orange"
         else:
-            self.status_label.setText("Status: Safe")
-            self.status_label.setStyleSheet("color: lightgreen; font-weight: bold;")
+            self.system_status_label.setText("● Safe")
+            color = "lightgreen"
+
+        self.system_status_label.setStyleSheet(f"""
+            color: {color};
+            border: 1px solid #d9dde3;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-weight: 500;
+        """)
+
+        # =========================
+        # 🔥 SYNC STATUS
+        # =========================
+        if not is_supabase_available():
+            self.sync_status_label.setText("● Offline")
+            color = "red"
+        else:
+            pending = get_sync_status()
+
+            if pending > 0:
+                self.sync_status_label.setText(f"● Pending ({pending})")
+                color = "orange"
+            else:
+                self.sync_status_label.setText("● Synced")
+                color = "lightgreen"
+
+        self.sync_status_label.setStyleSheet(f"""
+            color: {color};
+            border: 1px solid #d9dde3;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-weight: 500;
+        """)
 
     def load_saved_classrooms(self):
         classrooms = get_classrooms_by_college_id(self.college_id)
