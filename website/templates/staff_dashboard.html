@@ -316,6 +316,12 @@
                 text-align: center;
             }
         }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            opacity: 0.5;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -389,7 +395,9 @@
         {% endif %}
 
     </div>
-
+    <div class="footer">
+        © 2026 AttendMate
+    </div>
     <script>
         function copyTeacherInviteLink() {
             const text = document.getElementById("teacherInviteLink").innerText;
