@@ -2676,6 +2676,68 @@ def get_sync_status():
         print("Error getting sync status:", e)
         return -1
 
+
+def set_camera_status(classroom_name, camera_input, is_open):
+    conn = None
+    cur = None
+    try:
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO public.camera_status (classroom_name, camera_input, is_open)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (classroom_name)
+            DO UPDATE SET
+                camera_input = EXCLUDED.camera_input,
+                is_open = EXCLUDED.is_open
+        """, (classroom_name, str(camera_input), is_open))
+
+        conn.commit()
+        return True
+
+    except Exception as e:
+        print("Error saving camera status:", e)
+        if conn:
+            conn.rollback()
+        return False
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+            
+def get_camera_status(classroom_name):
+    conn = None
+    cur = None
+    try:
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT is_open
+            FROM public.camera_status
+            WHERE classroom_name = %s
+            LIMIT 1
+        """, (classroom_name,))
+
+        row = cur.fetchone()
+
+        if row:
+            return row[0]
+
+        return True  # default = ON
+
+    except Exception as e:
+        print("Error fetching camera status:", e)
+        return True
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 # ==================================================
 # LOCAL DATABASE INIT
 # ==================================================
@@ -2738,6 +2800,15 @@ def init_local_database():
         cur.execute("""
         CREATE INDEX IF NOT EXISTS sync_queue_status_idx
         ON public.sync_queue(status);
+        """)
+        
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS public.camera_status (
+            id SERIAL PRIMARY KEY,
+            classroom_name TEXT UNIQUE,
+            camera_input TEXT,
+            is_open BOOLEAN DEFAULT TRUE
+        );
         """)
 
         conn.commit()

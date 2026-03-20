@@ -8,6 +8,7 @@ from PySide6.QtGui import QImage, QPixmap
 
 from recognition import FaceRecognitionEngine
 from database import mark_attendance_for_slot
+from database import get_camera_status, set_camera_status
 from student_dashboard import Student
 
 
@@ -145,7 +146,7 @@ class CameraWidget(QWidget):
         self.slots = slots or []
         self.people = []
         self.student_page = None
-        self.camera_on = True
+        self.camera_on = get_camera_status(self.class_name)
 
         self.setFixedSize(360, 320)
 
@@ -186,8 +187,30 @@ class CameraWidget(QWidget):
         layout.addLayout(button_layout)
 
         self.setLayout(layout)
+        # =========================
+        # 🔥 APPLY INITIAL STATE
+        # =========================
+        if not self.camera_on:
+            self.camera_toggle_button.setText("Turn Camera ON")
+
+            self.label.setText("Camera is OFF")
+            self.label.setStyleSheet(
+                "background-color: black; color: red; border: 1px solid #444; font-weight: bold;"
+            )
+
+            self.status_label.setText("Camera OFF")
+            self.status_label.setStyleSheet(
+                "color: red; font-weight: bold; font-size: 11px;"
+            )
+        else:
+            self.camera_toggle_button.setText("Turn Camera OFF")
+            self.label.setText("Starting camera...")
 
         self.worker = CameraWorker(camera_source, class_name, self.slots)
+
+        # 🔥 apply saved state BEFORE starting thread
+        self.worker.set_camera_enabled(self.camera_on)
+
         self.worker.frame_ready.connect(self.update_frame)
         self.worker.people_ready.connect(self.update_people)
         self.worker.status_ready.connect(self.update_status)
@@ -249,6 +272,10 @@ class CameraWidget(QWidget):
 
     def toggle_camera(self):
         self.camera_on = not self.camera_on
+
+        # 🔥 save to DB
+        set_camera_status(self.class_name, self.camera_source, self.camera_on)
+
         self.worker.set_camera_enabled(self.camera_on)
 
         if self.camera_on:
