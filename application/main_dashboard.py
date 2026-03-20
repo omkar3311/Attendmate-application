@@ -188,7 +188,6 @@ class LoadingDialog(QDialog):
         layout.addWidget(label)
         self.setLayout(layout)
 
-        # remove close button
         self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint)
   
 class Dashboard(QWidget):
@@ -237,18 +236,11 @@ class Dashboard(QWidget):
         self.cpu_label = QLabel("CPU Usage: 0%")
         self.ram_label = QLabel("RAM Usage: 0%")
         self.camera_label = QLabel("Running Classrooms: 0")
-        # self.status_label = QLabel("Status: Safe")
         self.system_status_label = QLabel("● Safe")
         self.system_status_label.setObjectName("systemStatus")
-
         self.sync_status_label = QLabel("● Synced")
         self.sync_status_label.setObjectName("syncStatus")
         
-        # self.cpu_label.setFixedHeight(25)
-        # self.ram_label.setFixedHeight(25)
-        # self.camera_label.setFixedHeight(25)
-        # self.system_status_label.setFixedHeight(25)
-
         self.resource_layout.addWidget(self.system_status_label)
         self.resource_layout.addWidget(self.cpu_label)
         self.resource_layout.addWidget(self.ram_label)
@@ -296,9 +288,6 @@ class Dashboard(QWidget):
         self.ram_label.setText(f"RAM Usage: {ram}%")
         self.camera_label.setText(f"Running Classrooms: {len(self.camera_widgets)}")
 
-        # =========================
-        # 🔥 SYSTEM LOAD STATUS
-        # =========================
         if cpu > 85 or ram > 85:
             self.system_status_label.setText("● High Load")
             color = "red"
@@ -317,9 +306,6 @@ class Dashboard(QWidget):
             font-weight: 500;
         """)
 
-        # =========================
-        # 🔥 SYNC STATUS
-        # =========================
         if not is_supabase_available():
             self.sync_status_label.setText("● Offline")
             color = "red"
@@ -373,7 +359,6 @@ class Dashboard(QWidget):
         self.add_camera(cam_source, classroom_name, slots)
 
     def refresh_dashboard(self):
-        # clear UI
         for widget in self.camera_widgets:
             widget.setParent(None)
             widget.deleteLater()
@@ -381,7 +366,6 @@ class Dashboard(QWidget):
         self.camera_widgets.clear()
         self.camera_count = 0
 
-        # reload data
         self.load_saved_classrooms()
         self.start_saved_cameras_one_by_one()
     
@@ -395,27 +379,23 @@ class Dashboard(QWidget):
     def on_classroom_deleted(self, class_name):
         print(f"Deleted: {class_name}")
 
-        # remove from list
         self.camera_widgets = [
             w for w in self.camera_widgets if w.class_name != class_name
         ]
 
         self.camera_count = len(self.camera_widgets)
 
-        # rebuild grid cleanly
         for i in reversed(range(self.grid_layout.count())):
             item = self.grid_layout.itemAt(i)
             widget = item.widget()
             if widget:
                 self.grid_layout.removeWidget(widget)
 
-        # re-add remaining cameras
         for idx, cam in enumerate(self.camera_widgets):
             row = idx // 2
             col = idx % 2
             self.grid_layout.addWidget(cam, row, col)
 
-        # place add button again
         self.place_add_button()
     
     def ask_camera(self):
@@ -429,13 +409,11 @@ class Dashboard(QWidget):
         if not cam_source or not classroom_name:
             return
 
-        # 🔥 SHOW LOADING DIALOG
         self.loading_dialog = LoadingDialog("Setting up your classroom...")
         self.loading_dialog.show()
 
         self.add_button.setEnabled(False)
 
-        # thread setup (same as before)
         self.add_thread = QThread()
         self.add_worker = AddClassWorker(
             self.college_id,
@@ -462,7 +440,6 @@ class Dashboard(QWidget):
     def on_add_class_success(self, data):
         self.add_button.setEnabled(True)
 
-        # 🔥 CLOSE LOADING
         if hasattr(self, "loading_dialog"):
             self.loading_dialog.close()
 
@@ -481,7 +458,6 @@ class Dashboard(QWidget):
     def on_add_class_error(self, message):
         self.add_button.setEnabled(True)
 
-        # 🔥 CLOSE LOADING
         if hasattr(self, "loading_dialog"):
             self.loading_dialog.close()
 

@@ -187,9 +187,7 @@ class CameraWidget(QWidget):
         layout.addLayout(button_layout)
 
         self.setLayout(layout)
-        # =========================
-        # 🔥 APPLY INITIAL STATE
-        # =========================
+        
         if not self.camera_on:
             self.camera_toggle_button.setText("Turn Camera ON")
 
@@ -208,7 +206,6 @@ class CameraWidget(QWidget):
 
         self.worker = CameraWorker(camera_source, class_name, self.slots)
 
-        # 🔥 apply saved state BEFORE starting thread
         self.worker.set_camera_enabled(self.camera_on)
 
         self.worker.frame_ready.connect(self.update_frame)
@@ -273,7 +270,6 @@ class CameraWidget(QWidget):
     def toggle_camera(self):
         self.camera_on = not self.camera_on
 
-        # 🔥 save to DB
         set_camera_status(self.class_name, self.camera_source, self.camera_on)
 
         self.worker.set_camera_enabled(self.camera_on)
@@ -299,7 +295,6 @@ class CameraWidget(QWidget):
         if self.student_page is None:
             self.student_page = Student(self.camera_source, self.class_name)
 
-            # 🔥 connect delete signal
             self.student_page.classroom_deleted.connect(self.handle_classroom_deleted)
 
         self.student_page.show()
@@ -307,13 +302,10 @@ class CameraWidget(QWidget):
         self.student_page.activateWindow()
 
     def handle_classroom_deleted(self):
-    # 🔥 stop thread FIRST
         self.worker.stop()
 
-        # emit to dashboard
         self.classroom_deleted.emit(self.class_name)
 
-        # close safely
         self.close()
     
     def closeEvent(self, event):

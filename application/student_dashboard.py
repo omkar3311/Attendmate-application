@@ -323,18 +323,16 @@ class Student(QWidget):
         if reply != QMessageBox.Yes:
             return
 
-        # show progress
         self.status_label.setText("Deleting classroom...")
         self.delete_classroom_btn.setEnabled(False)
 
-        QApplication.processEvents()  # refresh UI
+        QApplication.processEvents()  
 
         success, message = delete_classroom(classroom_data["id"])
 
         if success:
             QMessageBox.information(self, "Success", "Classroom deleted successfully")
-            self.classroom_deleted.emit()   # 🔥 notify dashboard
-            # close this window (back to dashboard)
+            self.classroom_deleted.emit()   
             self.close()
 
         else:
@@ -424,7 +422,7 @@ class Student(QWidget):
         QMessageBox.critical(self, "Error", message)
 
     def update_frame(self, frame):
-        # frame coming from camera widget is already RGB in your current flow
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if len(frame.shape) == 3 and frame.shape[2] == 3:
             h, w, ch = frame.shape
             bytes_per_line = ch * w
