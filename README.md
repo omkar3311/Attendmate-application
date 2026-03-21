@@ -140,7 +140,6 @@ Provides structured access to attendance data and academic workflows.
 * Public deployment (cloud infrastructure)
 * Advanced analytics dashboard
 * Notification system
-* Mobile-friendly UI
 * Recognition confidence optimization
 
 ---
@@ -162,4 +161,4 @@ AttendMate goes beyond a typical CRUD system by combining:
 
 **Omkar Waghmare**
 Engineering in Computer Science
-Aspiring Data Scientist 🚀
+Aspiring Data Scientist 
