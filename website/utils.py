@@ -4,6 +4,7 @@ import uuid
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from fastapi import APIRouter, HTTPException, UploadFile
+import bcrypt
 
 load_dotenv()
 
@@ -21,6 +22,11 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def is_valid_table_name(name: str) -> bool:
     return bool(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name))
 
+def encrypt_password(password):
+    return bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt())
+
+def check_password(entered_password, hashed_password):
+    return bcrypt.checkpw(entered_password.encode('utf-8') , hashed_password.encode('utf-8'))
 
 def student_login(name: str, email: str, password: str, college_id, classroom_id):
     try:
@@ -44,18 +50,28 @@ def student_login(name: str, email: str, password: str, college_id, classroom_id
         response = (
             supabase
             .table(classroom_table)
-            .select("id, student_name, email, prn, classroom_id, college_id")
+            .select("id, student_name, email, prn, classroom_id, college_id , password")
             .eq("college_id", college_id)
             .eq("classroom_id", classroom_id)
             .eq("student_name", name)
             .eq("email", email)
-            .eq("password", password)
+            # .eq("password", password)
             .limit(1)
             .execute()
         )
 
         data = response.data or []
-        return data[0] if data else None
+
+        if not data:
+            return None
+
+        user = data[0]
+
+        if check_password(password, user["password"]):
+            print(user)
+            return user
+
+        return None
 
     except Exception as e:
         print("Error in student login:", e)
@@ -70,18 +86,28 @@ def teacher_login(college_id, teacher_name: str, email: str, password: str):
         response = (
             supabase
             .table("teachers")
-            .select("id, college_id, teacher_name, email, role")
+            .select("id, college_id, teacher_name, email, role , password")
             .eq("college_id", int(college_id))
             .eq("teacher_name", teacher_name)
             .eq("email", email)
-            .eq("password", password)
+            # .eq("password", password)
             .eq("role", "teacher")
             .limit(1)
             .execute()
         )
 
         data = response.data or []
-        return data[0] if data else None
+
+        if not data:
+            return None
+
+        user = data[0]
+
+        if check_password(password, user["password"]):
+            print(user)
+            return user
+
+        return None
 
     except Exception as e:
         print("Error in teacher login:", e)
@@ -93,17 +119,27 @@ def hod_login(name: str, college_name: str, email: str, password: str):
         response = (
             supabase
             .table("colleges")
-            .select("id, college_name, creator, creator_email")
+            .select("id, college_name, creator, creator_email , password")
             .eq("creator", name)
             .eq("creator_email", email)
             .eq("college_name", college_name)
-            .eq("password", password)
+            # .eq("password", password)
             .limit(1)
             .execute()
         )
 
         data = response.data or []
-        return data[0] if data else None
+
+        if not data:
+            return None
+
+        user = data[0]
+
+        if check_password(password, user["password"]):
+            print(user)
+            return user
+
+        return None
 
     except Exception as e:
         print("Error in HOD login:", e)
@@ -135,7 +171,7 @@ def hod_signup(name: str, college_name: str, email: str, password: str):
 
         if existing_user.data:
             return None
-
+        password = encrypt_password(password).decode('utf-8')
         college_insert = (
             supabase
             .table("colleges")
@@ -604,7 +640,7 @@ async def add_student_to_classroom_web(
 
         if not img_url:
             return None
-
+        password = encrypt_password(password).decode('utf-8')
         inserted = insert_student_into_dynamic_table(
             table_name=classroom_table,
             college_id=college_id,
@@ -652,7 +688,7 @@ def add_teacher_by_invite(college_id: int, teacher_name: str, email: str, passwo
 
         if existing_teacher.data:
             return None
-
+        password = encrypt_password(password).decode('utf-8')
         response = (
             supabase
             .table("teachers")
