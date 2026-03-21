@@ -1,0 +1,7 @@
+PySide6
+opencv-python-headless
+face-recognition
+ultralytics
+deep-sort-realtime
+psutil
+numpy

@@ -4,7 +4,7 @@ import socket
 import shutil
 from datetime import datetime, date
 from typing import Any, Optional
-
+import bcrypt
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import Json
@@ -880,23 +880,30 @@ def process_sync_queue():
 
 # AUTH / COLLEGE
 
+def encrypt_password(password):
+    return bcrypt.hashpw(password.encode('utf-8'),bcrypt.gensalt())
+
+def check_password(enterd_password, hashed_password):
+    return bcrypt.checkpw(enterd_password.encode('utf-8') , hashed_password)
+    
+    
 def check_college_login(name, email, college_name, password):
     conn = None
     cur = None
-
+    
     try:
         conn = get_pg_connection()
         cur = conn.cursor()
-
+        
         cur.execute("""
-            SELECT id, college_name, creator, creator_email
+            SELECT id, college_name, creator, creator_email 
             FROM public.colleges
             WHERE creator = %s
               AND creator_email = %s
               AND college_name = %s
-              AND password = %s
+              
             LIMIT 1
-        """, (name, email, college_name, password))
+        """, (name, email, college_name))
 
         row = cur.fetchone()
 
@@ -1557,7 +1564,7 @@ def add_student_to_classroom(class_name, student_name, file_path, student_prn, p
 
         if not img_url:
             return None
-
+        password = encrypt_password(password)
         inserted = insert_student_into_dynamic_table(
             classroom_table,
             college_id,
