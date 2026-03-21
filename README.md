@@ -127,9 +127,6 @@ Provides structured access to attendance data and academic workflows.
 
 ## ⚠️ Current Limitations (Design Scope)
 
-* Web authentication currently uses **in-memory state**, optimized for development/demo environments
-* Security layer (sessions/JWT) is not yet production-hardened
-
 👉 These are **intentional trade-offs** to prioritize core system architecture, real-time processing, and reliability.
 
 ---
