@@ -4,13 +4,16 @@ import cv2
 import face_recognition
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
-
+import numpy as np
 
 def resource_path(path: str) -> str:
     if hasattr(sys, "_MEIPASS"):
         return os.path.join(sys._MEIPASS, path)
     return os.path.join(os.path.abspath("."), path)
 
+
+ENCODINGS_FILE = resource_path("encodings.npy")
+NAMES_FILE = resource_path("names.npy")
 
 class FaceRecognitionEngine:
     def __init__(self):
@@ -29,33 +32,33 @@ class FaceRecognitionEngine:
         self.recognized_ids.clear()
         self.track_states.clear()
         self.identity_map.clear()
-
+        
     def load_known_faces(self, force_reload: bool = False):
         if force_reload:
-            self.known_faces.clear()
-            self.known_names.clear()
             self.faces_loaded = False
             self.clear_tracking_state()
 
         if self.faces_loaded:
             return
 
+        if os.path.exists(ENCODINGS_FILE) and os.path.exists(NAMES_FILE):
+            try:
+                self.known_faces = np.load(ENCODINGS_FILE, allow_pickle=True)
+                self.known_names = np.load(NAMES_FILE, allow_pickle=True)
+
+                print(f"✅ Loaded {len(self.known_faces)} faces from .npy")
+                self.faces_loaded = True
+                return
+            except Exception as e:
+                print("⚠ Failed loading .npy, regenerating:", e)
+
         faces_dir = resource_path("faces")
 
-        if not os.path.exists(faces_dir):
-            os.makedirs(faces_dir, exist_ok=True)
-            print(f"Faces directory created: {faces_dir}")
-            self.faces_loaded = True
-            return
-
-        self.known_faces.clear()
-        self.known_names.clear()
+        self.known_faces = []
+        self.known_names = []
 
         for file_name in os.listdir(faces_dir):
             img_path = os.path.join(faces_dir, file_name)
-
-            if not os.path.isfile(img_path):
-                continue
 
             if not file_name.lower().endswith((".png", ".jpg", ".jpeg")):
                 continue
@@ -64,17 +67,65 @@ class FaceRecognitionEngine:
                 image = face_recognition.load_image_file(img_path)
                 encodings = face_recognition.face_encodings(image)
 
-                print(f"{file_name} -> Encodings found: {len(encodings)}")
-
                 if encodings:
                     self.known_faces.append(encodings[0])
                     self.known_names.append(os.path.splitext(file_name)[0])
 
             except Exception as e:
-                print(f"Error loading face '{file_name}': {e}")
+                print(f"Error loading {file_name}: {e}")
 
-        print("Total faces loaded:", len(self.known_faces))
+        np.save(ENCODINGS_FILE, self.known_faces)
+        np.save(NAMES_FILE, self.known_names)
+
+        print(f"💾 Saved {len(self.known_faces)} encodings to .npy")
+
         self.faces_loaded = True
+
+    # def load_known_faces(self, force_reload: bool = False):
+    #     if force_reload:
+    #         self.known_faces.clear()
+    #         self.known_names.clear()
+    #         self.faces_loaded = False
+    #         self.clear_tracking_state()
+
+    #     if self.faces_loaded:
+    #         return
+
+    #     faces_dir = resource_path("faces")
+
+    #     if not os.path.exists(faces_dir):
+    #         os.makedirs(faces_dir, exist_ok=True)
+    #         print(f"Faces directory created: {faces_dir}")
+    #         self.faces_loaded = True
+    #         return
+
+    #     self.known_faces.clear()
+    #     self.known_names.clear()
+
+    #     for file_name in os.listdir(faces_dir):
+    #         img_path = os.path.join(faces_dir, file_name)
+
+    #         if not os.path.isfile(img_path):
+    #             continue
+
+    #         if not file_name.lower().endswith((".png", ".jpg", ".jpeg")):
+    #             continue
+
+    #         try:
+    #             image = face_recognition.load_image_file(img_path)
+    #             encodings = face_recognition.face_encodings(image)
+
+    #             print(f"{file_name} -> Encodings found: {len(encodings)}")
+
+    #             if encodings:
+    #                 self.known_faces.append(encodings[0])
+    #                 self.known_names.append(os.path.splitext(file_name)[0])
+
+    #         except Exception as e:
+    #             print(f"Error loading face '{file_name}': {e}")
+
+    #     print("Total faces loaded:", len(self.known_faces))
+    #     self.faces_loaded = True
 
     def reload_known_faces(self):
         self.load_known_faces(force_reload=True)
@@ -141,17 +192,36 @@ class FaceRecognitionEngine:
                                 self.identity_map[name] = original_id
                                 display_id = original_id
                             break
+                        
+                        # # 🔥 New improved matching
+                        # if len(self.known_faces) > 0:
+                        #     face_distances = face_recognition.face_distance(self.known_faces, encoding)
 
-                self.track_states[original_id] = "done"
+                        #     best_match_index = np.argmin(face_distances)
+                        #     best_distance = face_distances[best_match_index]
 
-            name = self.recognized_ids.get(original_id)
+                        #     # threshold (0.5 = strict, 0.6 = relaxed)
+                        #     if best_distance < 0.5:
+                        #         name = self.known_names[best_match_index]
 
-            if name is None:
-                for person_name, pid in self.identity_map.items():
-                    if pid == original_id:
-                        name = person_name
-                        self.recognized_ids[original_id] = person_name
-                        break
+                        #         self.recognized_ids[original_id] = name
+
+                        #         if name in self.identity_map:
+                        #             display_id = self.identity_map[name]
+                        #         else:
+                        #             self.identity_map[name] = original_id
+                        #             display_id = original_id
+                                    
+                        #             self.track_states[original_id] = "done"
+
+                        #             name = self.recognized_ids.get(original_id)
+
+                        #             if name is None:
+                        #                 for person_name, pid in self.identity_map.items():
+                        #                     if pid == original_id:
+                        #                         name = person_name
+                        #                         self.recognized_ids[original_id] = person_name
+                        #                         break
 
             if name:
                 display_id = self.identity_map.get(name, original_id)

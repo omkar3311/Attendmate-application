@@ -1640,23 +1640,59 @@ def mark_attendance_for_slot(class_name, recognized_people):
 
         for student_name, prn_raw in students:
             prn = str(prn_raw).strip().lower()
-            status = "present" if prn in recognized_set else "absent"
+            is_recognized = prn in recognized_set
 
             cur.execute(
                 sql.SQL("""
-                    INSERT INTO public.{}
-                    (college_id, classroom_id, student_name, prn, attendance_date, {})
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (prn, attendance_date)
-                    DO UPDATE SET {} = EXCLUDED.{}
+                    SELECT {}
+                    FROM public.{}
+                    WHERE prn = %s AND attendance_date = %s
                 """).format(
-                    sql.Identifier(attendance_table),
                     sql.Identifier(slot_column),
-                    sql.Identifier(slot_column),
-                    sql.Identifier(slot_column)
+                    sql.Identifier(attendance_table)
                 ),
-                (college_id, classroom_id, student_name, prn, today, status)
+                (prn, today)
             )
+
+            result = cur.fetchone()
+
+            if result:
+                current_status = result[0]
+
+                if current_status is None:
+                    current_status = "absent"
+
+                if current_status == "present":
+                    continue  
+
+                if current_status == "absent" and is_recognized:
+                    cur.execute(
+                        sql.SQL("""
+                            UPDATE public.{}
+                            SET {} = %s
+                            WHERE prn = %s AND attendance_date = %s
+                        """).format(
+                            sql.Identifier(attendance_table),
+                            sql.Identifier(slot_column)
+                        ),
+                        ("present", prn, today)
+                    )
+
+
+            else:
+                status = "present" if is_recognized else "absent"
+
+                cur.execute(
+                    sql.SQL("""
+                        INSERT INTO public.{}
+                        (college_id, classroom_id, student_name, prn, attendance_date, {})
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """).format(
+                        sql.Identifier(attendance_table),
+                        sql.Identifier(slot_column)
+                    ),
+                    (college_id, classroom_id, student_name, prn, today, status)
+                )
 
         conn.commit()
 
