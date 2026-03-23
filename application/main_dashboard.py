@@ -290,10 +290,20 @@ class Dashboard(QWidget):
         self.load_saved_classrooms()
         self.start_saved_cameras_one_by_one()
 
+    def stop_all_cameras(self):
+        for cam in self.camera_widgets:
+            try:
+                cam.worker.stop()
+            except Exception as e:
+                print("Error stopping camera:", e)
+        self.camera_widgets.clear()
+        
+        
     def handle_logout(self):
         from login import LoginPage
-        
+        self.stop_all_cameras()
         logout(self.college_id)
+        
         self.close()
 
         self.login = LoginPage()

@@ -51,7 +51,7 @@ class CameraWorker(QThread):
 
         self.recognized_students = set()
         self.last_db_write = 0
-        self.db_write_interval = 10
+        self.db_write_interval = 100
 
     def run(self):
         self.recognizer.load_known_faces()

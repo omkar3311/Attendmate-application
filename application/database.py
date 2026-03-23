@@ -1569,7 +1569,7 @@ def add_student_to_classroom(class_name, student_name, file_path, student_prn, p
 
         img_url, _ = upload_student_image(
             classroom_faces,
-            student_prn,
+            student_name,
             file_path
         )
 
