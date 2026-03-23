@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QThread, Signal
 from main_dashboard import Dashboard
-from database import check_college_login, get_college_names,startup_sync
+from database import check_college_login, get_college_names,startup_sync,enroll_login,load_qss_file
 
 class LoadingDialog(QDialog):
     def __init__(self):
@@ -39,7 +39,7 @@ class LoginPage(QWidget):
 
     def __init__(self):
         super().__init__()
-
+        load_qss_file(self, "style.qss")
         self.setWindowTitle("AttendMate Login")
         self.resize(600, 450)
 
@@ -123,9 +123,17 @@ class LoginPage(QWidget):
         result = check_college_login(name, email, college_name, pwd)
 
         if result:
+            print(result)
             self.message.setStyleSheet("color: lightgreen;")
             self.message.setText("Login successful")
 
+            enroll_login(
+                id=result["id"],
+                college_name=result["college_name"],
+                creator=result["creator"],
+                creator_email=result["creator_email"],
+                password=pwd   
+            )
             self.loading = LoadingDialog()
 
             self.worker = SyncWorker()

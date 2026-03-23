@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtCore import QTimer,QThread
 from camera import CameraWidget
 from database import add_classroom, get_classrooms_by_college_id,load_qss_file,startup_sync
-from database import get_sync_status, is_supabase_available
+from database import get_sync_status, is_supabase_available,logout
 from PySide6.QtWidgets import QTimeEdit
 from PySide6.QtCore import QTime
 from PySide6.QtWidgets import QSizePolicy
@@ -225,10 +225,20 @@ class Dashboard(QWidget):
         self.main_layout.addWidget(self.navbar_title)
         self.main_layout.addStretch()
         
+        top_bar = QHBoxLayout()
+
         self.name = QLabel(f"Welcome {self.user_name}")
         self.name.setObjectName("welcomeLabel")
-        # self.name.setMinimumHeight(45)  
-        self.main_layout.addWidget(self.name)
+
+        self.logout_btn = QPushButton("Logout")
+        self.logout_btn.setObjectName("logoutButton")   
+        self.logout_btn.clicked.connect(self.handle_logout)
+
+        top_bar.addWidget(self.name)       
+        top_bar.addStretch()              
+        top_bar.addWidget(self.logout_btn) 
+
+        self.main_layout.addLayout(top_bar)
 
         self.resource_layout = QHBoxLayout()
         self.resource_layout.setSpacing(15)
@@ -280,6 +290,15 @@ class Dashboard(QWidget):
         self.load_saved_classrooms()
         self.start_saved_cameras_one_by_one()
 
+    def handle_logout(self):
+        from login import LoginPage
+        
+        logout(self.college_id)
+        self.close()
+
+        self.login = LoginPage()
+        self.login.show()
+    
     def update_resources(self):
         cpu = psutil.cpu_percent(interval=None)
         ram = psutil.virtual_memory().percent
@@ -480,15 +499,15 @@ class Dashboard(QWidget):
         self.place_add_button()
 
 
-app = QApplication(sys.argv)
+# app = QApplication(sys.argv)
 
-user_data = {
-    "id": 1,
-    "email": "omkar@gmail.com",
-    "creator": "omkar",
-    "username": "omkar"
-}
-window = Dashboard(user_data)
-window.show()
+# user_data = {
+#     "id": 1,
+#     "email": "omkar@gmail.com",
+#     "creator": "omkar",
+#     "username": "omkar"
+# }
+# window = Dashboard(user_data)
+# window.show()
 
-app.exec()
+# app.exec()

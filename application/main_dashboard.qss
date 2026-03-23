@@ -16,7 +16,16 @@ QLabel#navbarTitle {
     padding: 10px 0px 10px 0px;
     color: #111827;
 }
+#logoutButton {
+    background-color: #ff4d4d;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
 
+#logoutButton:hover {
+    background-color: #e60000;
+}
 #systemStatus,#syncStatus {
     background-color: #ffffff;
     border: 1px solid #d9dde3;

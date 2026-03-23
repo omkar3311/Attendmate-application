@@ -361,6 +361,17 @@ def init_local_database():
         );
         """)
 
+        cur.execute("""
+                    CREATE TABLE IF NOT EXISTS public.login (
+                        id INTEGER PRIMARY KEY,
+                        college_name TEXT NOT NULL,
+                        creator TEXT,
+                        creator_email TEXT,
+                        password TEXT,
+                        is_login BOOLEAN DEFAULT FALSE
+                    );
+                    """)
+        
         conn.commit()
         return True
 
@@ -1726,6 +1737,115 @@ def get_attendance_by_date(class_name, attendance_date=None):
 
 
 # STARTUP
+
+def is_login():
+    init_local_database()
+    conn = None 
+    cur = None
+    try:
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, college_name, creator, creator_email, is_login
+            FROM public.login
+            WHERE is_login = TRUE
+            LIMIT 1;
+        """)
+
+        row = cur.fetchone()
+        print(row)
+        if row:
+            user_data = {
+                "id": row[0],
+                "college_name": row[1],
+                "creator": row[2],
+                "creator_email": row[3],
+            }
+            return True, user_data
+        else:
+            return False, None
+
+    except Exception as e:
+        print("Error checking login:", e)
+        if conn:
+            conn.rollback()
+        return False, None
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+            
+def enroll_login(id, college_name, creator, creator_email, password):
+    conn = None 
+    cur = None
+    try:
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO public.login 
+            (id, college_name, creator, creator_email, password, is_login)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id)
+            DO UPDATE SET 
+                is_login = TRUE,
+                college_name = EXCLUDED.college_name,
+                creator = EXCLUDED.creator,
+                creator_email = EXCLUDED.creator_email,
+                password = EXCLUDED.password;
+        """, (
+            id,
+            college_name,
+            creator,
+            creator_email,
+            password,
+            True
+        ))
+
+        conn.commit()
+        return True
+
+    except Exception as e:
+        print("Error inserting/updating login:", e)
+        if conn:
+            conn.rollback()
+        return False
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+def logout(id):
+    conn = None
+    cur = None
+    try:
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            UPDATE public.login
+            SET is_login = FALSE
+            WHERE id = %s
+        """, (id,))
+
+        conn.commit()
+
+    except Exception as e:
+        print("Error marking sync done:", e)
+        if conn:
+            conn.rollback()
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+    
 
 def startup_sync():
     try:
