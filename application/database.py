@@ -782,6 +782,8 @@ def sync_attendance_date_to_cloud(attendance_table, attendance_date):
             payload = dict(zip(columns, row))
             payload = make_payload_json_safe(payload)
             supabase.table(attendance_table).upsert(payload).execute()
+        
+        sync_cloud_images_to_local()
 
         return True
 
@@ -795,6 +797,50 @@ def sync_attendance_date_to_cloud(attendance_table, attendance_date):
         if conn:
             conn.close()
 
+def sync_cloud_images_to_local():
+    if not is_supabase_available():
+        return False
+
+    try:
+        classrooms = supabase.table("classrooms").select("*").execute().data
+
+        for classroom in classrooms:
+            folder_name = classroom.get("classroom_faces")
+            if not folder_name:
+                continue
+
+            local_folder = os.path.join(LOCAL_IMAGE_ROOT, folder_name)
+            os.makedirs(local_folder, exist_ok=True)
+
+            try:
+                files = supabase.storage.from_(SUPABASE_BUCKET).list(folder_name)
+
+                for file in files:
+                    file_name = file["name"]
+
+                    local_path = os.path.join(local_folder, file_name)
+
+                    # Skip if already exists
+                    if os.path.exists(local_path):
+                        continue
+
+                    storage_path = f"{folder_name}/{file_name}"
+
+                    data = supabase.storage.from_(SUPABASE_BUCKET).download(storage_path)
+
+                    with open(local_path, "wb") as f:
+                        f.write(data)
+
+                    print("Downloaded:", storage_path)
+
+            except Exception as e:
+                print("Image sync error:", e)
+
+        return True
+
+    except Exception as e:
+        print("Cloud image sync failed:", e)
+        return False
 
 # PROCESS PENDING SYNC QUEUE
 
@@ -888,6 +934,91 @@ def process_sync_queue():
 
     return True
 
+def fill_absent_previous_days(class_name):
+    conn = None
+    cur = None
+
+    try:
+        classroom_data = get_classroom_full_data_by_name(class_name)
+        if not classroom_data:
+            print("Classroom not found")
+            return False
+
+        attendance_table = classroom_data["attendance_table"]
+        slots = classroom_data.get("slot", [])
+
+        if not slots:
+            return False
+
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        today = date.today()
+
+        slot_columns = []
+        for slot in slots:
+            column = make_slot_column_name(slot["start"], slot["end"])
+            slot_columns.append(column)
+
+        updated_dates = set()
+
+        for slot_column in slot_columns:
+            cur.execute(
+                sql.SQL("""
+                    UPDATE public.{}
+                    SET {} = 'absent'
+                    WHERE attendance_date < %s
+                    AND {} IS NULL
+                    RETURNING attendance_date
+                """).format(
+                    sql.Identifier(attendance_table),
+                    sql.Identifier(slot_column),
+                    sql.Identifier(slot_column)
+                ),
+                (today,)
+            )
+
+            rows = cur.fetchall()
+            for r in rows:
+                updated_dates.add(str(r[0]))
+
+        conn.commit()
+
+        # Sync updated dates to cloud
+        if updated_dates:
+            for d in updated_dates:
+                if is_supabase_available():
+                    try:
+                        sync_attendance_date_to_cloud(attendance_table, d)
+                    except Exception:
+                        enqueue_sync(
+                            "attendance_sync",
+                            "sync_date",
+                            attendance_table,
+                            {"attendance_date": d}
+                        )
+                else:
+                    enqueue_sync(
+                        "attendance_sync",
+                        "sync_date",
+                        attendance_table,
+                        {"attendance_date": d}
+                    )
+
+        print(f"[Backfill] Absent filled for {class_name}")
+        return True
+
+    except Exception as e:
+        print("Error filling absent:", e)
+        if conn:
+            conn.rollback()
+        return False
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 # AUTH / COLLEGE
 
@@ -1636,11 +1767,22 @@ def mark_attendance_for_slot(class_name, recognized_people):
             return False
 
         today = date.today()
-        recognized_set = {str(x).strip().lower() for x in recognized_people if x}
+        # recognized_set = {str(x).strip().lower() for x in recognized_people if x}
+        
+        name_to_prn = {
+            str(student_name).strip().lower(): str(prn).strip().lower()
+            for student_name, prn in students
+        }
 
+        recognized_set = {
+            name_to_prn.get(str(x).strip().lower())
+            for x in recognized_people
+            if name_to_prn.get(str(x).strip().lower())
+        }
         for student_name, prn_raw in students:
             prn = str(prn_raw).strip().lower()
             is_recognized = prn in recognized_set
+            print(student_name , prn)
 
             cur.execute(
                 sql.SQL("""

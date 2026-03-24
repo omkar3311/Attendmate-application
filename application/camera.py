@@ -8,7 +8,7 @@ from PySide6.QtGui import QImage, QPixmap
 
 from recognition import FaceRecognitionEngine
 from database import mark_attendance_for_slot
-from database import get_camera_status, set_camera_status
+from database import get_camera_status, set_camera_status ,fill_absent_previous_days
 from student_dashboard import Student
 
 
@@ -55,6 +55,8 @@ class CameraWorker(QThread):
 
     def run(self):
         self.recognizer.load_known_faces()
+        fill_absent_previous_days(self.class_name)
+        # self.recognizer.load_known_faces(self.class_name)
         cap = None
 
         while self.running:
@@ -87,8 +89,8 @@ class CameraWorker(QThread):
 
             if is_slot_active(self.slots):
                 frame, people = self.recognizer.detect_and_recognize(frame)
+                # frame, people = self.recognizer.detect_and_recognize(frame, self.class_name)
                 self.status_ready.emit("Recognition ON")
-
                 for _, identity, _, _, _, _ in people:
                     if identity:
                         student_identity = str(identity).strip().lower()
@@ -96,23 +98,27 @@ class CameraWorker(QThread):
 
                 now = time.time()
 
-                if now - self.last_db_write >= self.db_write_interval:
-                    try:
+                if self.recognized_students:
+                    now = time.time()
+
+                    if now - self.last_db_write >= self.db_write_interval:
                         try:
-                            ok = mark_attendance_for_slot(
-                                self.class_name,
-                                self.recognized_students
-                            )
+                            try:
+                                print(self.recognized_students)
+                                ok = mark_attendance_for_slot(
+                                    self.class_name,
+                                    self.recognized_students
+                                )
+                            except Exception as e:
+                                print("Attendance skipped (class deleted):", e)
+                                ok = False
+                            if ok:
+                                print(f"[Attendance] Updated for {self.class_name}")
+
                         except Exception as e:
-                            print("Attendance skipped (class deleted):", e)
-                            ok = False
-                        if ok:
-                            print(f"[Attendance] Updated for {self.class_name}")
+                            print("Attendance write error:", e)
 
-                    except Exception as e:
-                        print("Attendance write error:", e)
-
-                    self.last_db_write = now
+                        self.last_db_write = now
 
             else:
                 people = []
