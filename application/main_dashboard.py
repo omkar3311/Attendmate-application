@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtCore import QTimer,QThread
 from camera import CameraWidget
 from database import add_classroom, get_classrooms_by_college_id,load_qss_file,startup_sync
-from database import get_sync_status, is_supabase_available,logout
+from database import get_sync_status, is_supabase_available,logout,process_sync_queue
 from PySide6.QtWidgets import QTimeEdit
 from PySide6.QtCore import QTime
 from PySide6.QtWidgets import QSizePolicy
@@ -344,6 +344,7 @@ class Dashboard(QWidget):
             if pending > 0:
                 self.sync_status_label.setText(f"● Pending ({pending})")
                 color = "orange"
+                process_sync_queue()
             else:
                 self.sync_status_label.setText("● Synced")
                 color = "lightgreen"
