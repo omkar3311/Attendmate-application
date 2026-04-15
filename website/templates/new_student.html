@@ -425,6 +425,16 @@
                         <span class="label">Classroom</span>
                         <span class="value">{{ classroom_name }}</span>
                     </div>
+                    <div class="meta-box">
+                        <span class="label">Defaulter</span>
+                        <span class="value">
+                            {% if attendance_percent > 75 %}
+                                <span>No</span>
+                            {% else %}
+                                <span>Yes</span>
+                            {% endif %}
+                        </span>
+                    </div>
                 </div>
             </div>
 
