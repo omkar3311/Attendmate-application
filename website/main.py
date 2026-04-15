@@ -506,11 +506,37 @@ def student_dashboard(request: Request):
         }
     )
 
-
 @app.get("/dashboard")
 def dashboard(request: Request):
     classrooms = get_classrooms_by_college(CURRENT_COLLEGE["id"])
     teachers = get_teachers_by_college(CURRENT_COLLEGE["id"]) if CURRENT_USER["role"] == "hod" else []
+
+    classroom_data = {}
+
+    total_students = 0
+    total_defaulters = 0
+
+    for classroom in classrooms:
+        classroom_id = classroom["id"]
+
+        students = get_students_from_classroom_table(classroom["classroom_table"])
+        defaulters = defaulter_students(classroom["college_id"], classroom_id) or []
+
+        defaulter_map = {d["prn"]: d["defaulter"] for d in defaulters}
+
+        for student in students:
+            student["defaulter"] = defaulter_map.get(student.get("prn"), "NO")
+
+        student_count = len(students)
+        defaulter_count = sum(1 for s in students if s.get("defaulter") == "YES")
+
+        total_students += student_count
+        total_defaulters += defaulter_count
+
+        classroom_data[classroom_id] = {
+            "student_count": student_count,
+            "defaulter_count": defaulter_count
+        }
 
     return templates.TemplateResponse(
         "main_dashboard.html",
@@ -518,7 +544,10 @@ def dashboard(request: Request):
             "request": request,
             "college": CURRENT_COLLEGE,
             "classrooms": classrooms,
+            "classroom_data": classroom_data, 
             "classroom_count": len(classrooms),
+            "student_count": total_students,
+            "defaulter_count": total_defaulters,
             "teacher_count": len(teachers),
             "current_role": CURRENT_USER["role"]
         }

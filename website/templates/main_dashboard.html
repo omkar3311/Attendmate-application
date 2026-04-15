@@ -253,14 +253,19 @@
             {% if classrooms %}
                 <div class="grid">
                     {% for classroom in classrooms %}
-                        <a href="/classroom/{{ classroom.id }}" class="card">
-                            <h3>{{ classroom.classroom_name | title }}</h3>
-                            <p><strong>Camera:</strong> {{ classroom.camera_input }}</p>
-                            <p><strong>Student Table:</strong> {{ classroom.classroom_table }}</p>
-                            <p><strong>Attendance Table:</strong> {{ classroom.attendance_table }}</p>
-                            <p><strong>Faces Folder:</strong> {{ classroom.classroom_faces }}</p>
-                        </a>
-                    {% endfor %}
+                        {% set data = classroom_data.get(classroom.id) %}
+                            <a href="/classroom/{{ classroom.id }}" class="card">
+                                <h3>{{ classroom.classroom_name | title }}</h3>
+                                <p><strong>Camera:</strong> {{ classroom.camera_input }}</p>
+                                <p><strong>Students Count:</strong> {{ data.student_count }}</p>
+                                <p><strong>Defaulter Count:</strong> {{ data.defaulter_count }}</p>
+                                <!--
+                                <p><strong>Student Table:</strong> {{ classroom.classroom_table }}</p>
+                                <p><strong>Attendance Table:</strong> {{ classroom.attendance_table }}</p>
+                                <p><strong>Faces Folder:</strong> {{ classroom.classroom_faces }}</p>
+                                -->
+                            </a>
+                        {% endfor %}
                 </div>
             {% else %}
                 <div class="empty-box">
