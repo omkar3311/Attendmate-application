@@ -565,6 +565,8 @@ def classroom_dashboard(request: Request, classroom_id: int):
     for student in students:
         student["defaulter"] = defaulter_map.get(student.get("prn"), "NO")
         
+    defaulter_count = sum(1 for student in students if student.get("defaulter") == "YES")
+        
     base_url = str(request.base_url).rstrip("/")
     student_join_link = f"http://127.0.0.1:8000/student/invite/{CURRENT_COLLEGE['id']}/{classroom['id']}"
     teacher_join_link = f"{base_url}/teacher/join"
@@ -576,6 +578,7 @@ def classroom_dashboard(request: Request, classroom_id: int):
             "college": CURRENT_COLLEGE,
             "classroom": classroom,
             "students": students,
+            "defualters_count" : defaulter_count,
             "student_count": len(students),
             "error_message": None,
             "success_message": None,
