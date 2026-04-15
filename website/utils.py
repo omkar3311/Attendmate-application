@@ -419,6 +419,70 @@ def get_student_dashboard_data(student_name: str, student_email: str, college_id
         print("Error building student dashboard:", e)
         return None
 
+def defaulter_students(college_id: int, classroom_id: str):
+    try:
+        classroom = get_classroom_by_id(classroom_id)
+        if not classroom or classroom["college_id"] != college_id:
+            return None
+
+        classroom_table = classroom.get("classroom_table")
+        attendance_table = classroom.get("attendance_table")
+
+        student_response = (
+            supabase
+            .table(classroom_table)
+            .select("student_name, prn")
+            .eq("college_id", college_id)
+            .eq("classroom_id", classroom_id)
+            .execute()
+        )
+
+        students = student_response.data or []
+        result = []
+
+        for student in students:
+            prn = student["prn"]
+
+            attendance_response = (
+                supabase
+                .table(attendance_table)
+                .select("*")
+                .eq("college_id", college_id)
+                .eq("classroom_id", classroom_id)
+                .eq("prn", prn)
+                .execute()
+            )
+
+            rows = attendance_response.data or []
+
+            present = 0
+            absent = 0
+
+            for row in rows:
+                for key, value in row.items():
+                    if key.startswith("slot_"):
+                        val = str(value).lower() if value else ""
+
+                        if val == "present":
+                            present += 1
+                        elif val == "absent":
+                            absent += 1
+
+            total = present + absent
+            percent = (present / total * 100) if total > 0 else 0
+
+            result.append({
+                "student_name": student["student_name"],
+                "prn": prn,
+                "attendance_percent": round(percent, 2),
+                "defaulter": "YES" if percent < 75 else "NO"
+            })
+
+        return result
+
+    except Exception as e:
+        print("Error:", e)
+        return None
 
 def get_student_dashboard_data_by_prn(college_id: int, classroom_id: int, prn: str):
     try:
