@@ -19,7 +19,8 @@ from utils import (
     get_student_dashboard_data_by_prn,
     get_teachers_by_college,
     add_teacher_by_invite,
-    get_college_by_id
+    get_college_by_id,
+    defaulter_students
     
 )
 
@@ -557,7 +558,13 @@ def classroom_dashboard(request: Request, classroom_id: int):
         raise HTTPException(status_code=403, detail="This classroom does not belong to current college")
 
     students = get_students_from_classroom_table(classroom["classroom_table"])
+    defaulters = defaulter_students(classroom["college_id"] ,classroom_id)
 
+    defaulter_map = {d["prn"]: d["defaulter"] for d in defaulters}
+
+    for student in students:
+        student["defaulter"] = defaulter_map.get(student.get("prn"), "NO")
+        
     base_url = str(request.base_url).rstrip("/")
     student_join_link = f"http://127.0.0.1:8000/student/invite/{CURRENT_COLLEGE['id']}/{classroom['id']}"
     teacher_join_link = f"{base_url}/teacher/join"

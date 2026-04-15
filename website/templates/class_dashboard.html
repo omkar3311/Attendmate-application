@@ -476,6 +476,7 @@
                         <h3>{{ student.student_name | title }}</h3>
                         <p><strong>PRN:</strong> {{ student.prn }}</p>
                         <p><strong>Email:</strong> {{ student.email or "-" }}</p>
+                        <p><strong>Defaulter:</strong> {{ student.defaulter }}</p>
                         <p class="view-text">Click to view student page</p>
                     </a>
                 {% endfor %}

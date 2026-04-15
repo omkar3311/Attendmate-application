@@ -104,7 +104,6 @@ def teacher_login(college_id, teacher_name: str, email: str, password: str):
         user = data[0]
 
         if check_password(password, user["password"]):
-            print(user)
             return user
 
         return None
