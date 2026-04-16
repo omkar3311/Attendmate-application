@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from fastapi import APIRouter, HTTPException, UploadFile
 import bcrypt
+from datetime import datetime
+import calendar
 
 load_dotenv()
 
@@ -27,6 +29,25 @@ def encrypt_password(password):
 
 def check_password(entered_password, hashed_password):
     return bcrypt.checkpw(entered_password.encode('utf-8') , hashed_password.encode('utf-8'))
+
+def current_month_range():
+    now = datetime.now()
+
+    start = now.replace(day=1)
+    last_day = calendar.monthrange(now.year, now.month)[1]
+    end = now.replace(day=last_day)
+    
+    response = supabase.table("attendance") \
+    .select("*") \
+    .gte("date", start.date().isoformat()) \
+    .lt("date", end.date().isoformat()) \
+    .execute()
+
+    data = response.data
+    return {
+        "start": start.strftime("%Y-%m-%d"),
+        "end": end.strftime("%Y-%m-%d")
+    }
 
 def student_login(name: str, email: str, password: str, college_id, classroom_id):
     try:
@@ -587,6 +608,15 @@ def get_student_dashboard_data_by_prn(college_id: int, classroom_id: int, prn: s
         print("Error building student dashboard by PRN:", e)
         return None
 
+def get_attendance_of_class(class_name : str):
+    try:
+        student_response = supabase.table(class_name).select("*").execute()
+        if not student_response :
+            return None
+        return student_response
+    except Exception as e:
+        print("Error finding attendance class:", e)
+        return None
 
 def get_students_from_classroom_table(classroom_table: str):
     try:
