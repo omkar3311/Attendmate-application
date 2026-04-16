@@ -20,7 +20,9 @@ from utils import (
     get_teachers_by_college,
     add_teacher_by_invite,
     get_college_by_id,
-    defaulter_students
+    defaulter_students,
+    current_month_range,
+    get_attendance_of_class
     
 )
 
@@ -779,7 +781,6 @@ def view_student_page(request: Request, classroom_id: int, prn: str):
         }
     )
 
-
 @app.get("/classroom/{classroom_id}/export/csv")
 def export_classroom_csv(classroom_id: int):
     if CURRENT_USER["college_id"] is None or not CURRENT_USER["role"]:
@@ -791,21 +792,58 @@ def export_classroom_csv(classroom_id: int):
         raise HTTPException(status_code=404, detail="Classroom not found")
 
     if classroom["college_id"] != CURRENT_USER["college_id"]:
-        raise HTTPException(status_code=403, detail="This classroom does not belong to current college")
+        raise HTTPException(status_code=403, detail="Unauthorized")
 
-    students = get_students_from_classroom_table(classroom["classroom_table"])
+    classroom_table = classroom["classroom_table"]
+    attendance_table = classroom["attendance_table"]
+
+    students_res = get_students_from_classroom_table(classroom_table)
+
+    students = {s["prn"]: s for s in (students_res or [])}
+
+    attendance_res = get_attendance_of_class(attendance_table)
+    attendance_rows = attendance_res.data or []
+    attendance_rows = sorted(
+    attendance_rows,
+    key=lambda x: (
+        str(x.get("prn", ""))
+    )
+)
+    slot_columns = set()
+    for row in attendance_rows:
+        for key in row.keys():
+            if key.startswith("slot_"):
+                slot_columns.add(key)
+
+    slot_columns = sorted(slot_columns)
+
+    def format_slot(slot):
+        return slot.replace("slot_", "").replace("_", ":")
+
+    formatted_slots = [format_slot(s) for s in slot_columns]
 
     output = io.StringIO()
     writer = csv.writer(output)
 
-    writer.writerow(["Student Name", "PRN", "Email"])
+    writer.writerow([
+        "Student Name", "PRN", "Email", "Date", *formatted_slots
+    ])
 
-    for student in students:
-        writer.writerow([
+    for row in attendance_rows:
+        prn = row.get("prn")
+        student = students.get(prn, {})
+
+        csv_row = [
             student.get("student_name", ""),
-            student.get("prn", ""),
-            student.get("email", "")
-        ])
+            prn,
+            student.get("email", ""),
+            row.get("attendance_date", "")
+        ]
+
+        for slot in slot_columns:
+            csv_row.append(row.get(slot, "pending"))
+
+        writer.writerow(csv_row)
 
     output.seek(0)
 
@@ -815,6 +853,7 @@ def export_classroom_csv(classroom_id: int):
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={
-            "Content-Disposition": f"attachment; filename={safe_classroom_name}_students.csv"
+            "Content-Disposition": f"attachment; filename={safe_classroom_name}_attendance.csv"
         }
     )
+#End
