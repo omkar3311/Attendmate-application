@@ -40,3 +40,6 @@ application/local_filestore/
 
 # Optional: ignore all face datasets if needed
 application/faces/
+
+# Numpy files
+*.npy
