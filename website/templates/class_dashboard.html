@@ -365,6 +365,37 @@
             opacity: 0.5;
             padding: 10px;
         }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-info {
+            background: #0ea5e9;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #0284c7;
+        }
+        .form-group select {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            background: white;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .form-group select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -393,9 +424,20 @@
             <div class="action-bar">
                 <div class="left-actions">
                     <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+
                     <button type="button" class="btn btn-primary" onclick="toggleStudentForm()">
                         Add Student
                     </button>
+
+                    <button type="button" class="btn btn-warning" onclick="toggleDefaulterForm()">
+                        Set Defaulter Threshold
+                    </button>
+
+                    {% if current_role == "hod" %}
+                    <button type="button" class="btn btn-info" onclick="toggleTeacherForm()">
+                        Set Class Teacher
+                    </button>
+                    {% endif %}
                 </div>
 
                 <div class="right-actions">
@@ -404,7 +446,52 @@
                     </a>
                 </div>
             </div>
+            <div id="defaulterFormBox" class="form-box">
+            <h2>Set Defaulter Threshold</h2>
 
+            <form action="/classroom/{{ classroom.id }}/set-defaulter" method="post">
+                <div class="form-group">
+                    <label>Threshold (%)</label>
+                    <input type="number" name="defaulter" placeholder="Enter percentage" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleDefaulterForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div id="teacherFormBox" class="form-box">
+            <h2>Set Class Teacher</h2>
+
+            <form action="/classroom/{{ classroom.id }}/set-teacher" method="post">
+
+                <div class="form-group">
+
+                    <select name="class_teacher" required>
+                        <option value="">-- Select Teacher --</option>
+
+                        {% for teacher in teachers %}
+                            <option value="{{ teacher.teacher_name }}"
+                                {% if teacher.teacher_name == classroom.class_teacher %}selected{% endif %}>
+                                {{ teacher.teacher_name }} ({{ teacher.email }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">
+                        Save
+                    </button>
+
+                    <button type="button" class="btn btn-secondary" onclick="toggleTeacherForm()">
+                        Cancel
+                    </button>
+                </div>
+
+            </form>
+        </div>
             <div class="link-panel">
                 <h2>Invite Links</h2>
     
@@ -427,7 +514,7 @@
         {% if success_message %}
             <div class="message success">{{ success_message }}</div>
         {% endif %}
-
+        
         <div id="studentFormBox" class="form-box">
             <h2>Add Student</h2>
             <p class="form-subtitle">
@@ -468,7 +555,7 @@
                 </div>
             </form>
         </div>
-
+        
         <h2 class="student-section-title">Students</h2>
 
         {% if students %}
@@ -510,6 +597,13 @@
                     alert("Failed to copy link");
                 });
         }
+function toggleDefaulterForm() {
+    document.getElementById("defaulterFormBox").classList.toggle("active");
+}
+
+function toggleTeacherForm() {
+    document.getElementById("teacherFormBox").classList.toggle("active");
+}
     </script>
 </body>
 </html>
