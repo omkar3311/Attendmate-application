@@ -380,6 +380,8 @@
             <p><strong>College:</strong> {{ college.college_name | title }}</p>
             <p><strong>Total Students:</strong> {{ student_count }}</p>
             <p><strong>Total Defaulter:</strong> {{ defualters_count }} </p>
+            <p><strong>Defaulter Threshold:</strong> {{ classroom.defualter }} </p>
+            <p><strong>Class Teacher:</strong> {{ classroom.class_teacher }} </p>
             <p><strong>Camera Source:</strong> {{ classroom.camera_input }}</p>
 
             {% if current_role %}
