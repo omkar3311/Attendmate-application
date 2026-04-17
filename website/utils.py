@@ -331,34 +331,73 @@ def format_slot_label(column_name: str) -> str:
 
     return column_name
 
+def process_attendance_rows(attendance_rows):
+    attendance = {}
+    present_count = 0
+    absent_count = 0
+    pending_count = 0
+
+    for row in attendance_rows:
+        row_date = str(row.get("attendance_date")) if row.get("attendance_date") else "Not marked yet"
+
+        day_slots = []
+
+        for key, value in row.items():
+
+            if key.startswith("slot_") and not key.endswith("_teacher"):
+
+                teacher_key = f"{key}_teacher"
+                teacher_raw = row.get(teacher_key)
+
+                if isinstance(teacher_raw, str):
+                    teacher_name = teacher_raw.strip()
+                else:
+                    teacher_name = ""
+
+                if isinstance(value, str):
+                    normalized = value.strip().lower()
+                else:
+                    normalized = ""
+
+                if normalized == "present":
+                    status = "present"
+                    present_count += 1
+                elif normalized == "absent":
+                    status = "absent"
+                    absent_count += 1
+                else:
+                    status = "pending"
+                    pending_count += 1
+
+                day_slots.append({
+                    "slot_label": format_slot_label(key),
+                    "status": status,
+                    "teacher": teacher_name if teacher_name else "-"
+                })
+
+        attendance[row_date] = {
+            "slots": sorted(day_slots, key=lambda x: x["slot_label"]),
+            "audit": row.get("audit") or []
+        }
+
+    marked_total = present_count + absent_count
+    attendance_percent = round((present_count / marked_total) * 100, 2) if marked_total > 0 else 0
+
+    return attendance, present_count, absent_count, pending_count, attendance_percent
 
 def get_student_dashboard_data(student_name: str, student_email: str, college_id: int, classroom_id: int):
     try:
         classroom = get_classroom_by_id(classroom_id)
-        if not classroom:
-            return None
-
-        if classroom["college_id"] != college_id:
+        if not classroom or classroom["college_id"] != college_id:
             return None
 
         classroom_table = classroom.get("classroom_table")
         attendance_table = classroom.get("attendance_table")
 
-        if not classroom_table or not attendance_table:
-            return None
-
-        if not is_valid_table_name(classroom_table):
-            raise HTTPException(status_code=400, detail="Invalid classroom table name")
-
-        if not is_valid_table_name(attendance_table):
-            raise HTTPException(status_code=400, detail="Invalid attendance table name")
-
         student_response = (
             supabase
             .table(classroom_table)
             .select("id, student_name, email, prn, college_id, classroom_id, img_url")
-            .eq("college_id", college_id)
-            .eq("classroom_id", classroom_id)
             .eq("student_name", student_name)
             .eq("email", student_email)
             .limit(1)
@@ -369,7 +408,7 @@ def get_student_dashboard_data(student_name: str, student_email: str, college_id
         if not student_rows:
             return None
 
-        student_row = student_rows[0]
+        student = student_rows[0]
 
         attendance_response = (
             supabase
@@ -377,57 +416,24 @@ def get_student_dashboard_data(student_name: str, student_email: str, college_id
             .select("*")
             .eq("college_id", college_id)
             .eq("classroom_id", classroom_id)
-            .eq("prn", student_row["prn"])
+            .eq("prn", student["prn"])
             .order("attendance_date", desc=True)
             .execute()
         )
 
         attendance_rows = attendance_response.data or []
 
-        attendance = {}
-        present_count = 0
-        absent_count = 0
-        pending_count = 0
-
-        for row in attendance_rows:
-            row_date = row.get("attendance_date")
-            row_date = str(row_date) if row_date else "Not marked yet"
-
-            day_slots = []
-
-            for key, value in row.items():
-                if key.startswith("slot_"):
-                    normalized = str(value).strip().lower() if value is not None else ""
-
-                    if normalized == "present":
-                        status = "present"
-                        present_count += 1
-                    elif normalized == "absent":
-                        status = "absent"
-                        absent_count += 1
-                    else:
-                        status = "pending"
-                        pending_count += 1
-
-                    day_slots.append({
-                        "slot_label": format_slot_label(key),
-                        "status": status
-                    })
-
-            day_slots.sort(key=lambda x: x["slot_label"])
-            attendance[row_date] = day_slots
-
-        marked_total = present_count + absent_count
-        attendance_percent = round((present_count / marked_total) * 100, 2) if marked_total > 0 else 0
+        attendance, present_count, absent_count, pending_count, attendance_percent = \
+            process_attendance_rows(attendance_rows)
 
         return {
-            "student_name": student_row.get("student_name", ""),
-            "student_email": student_row.get("email", ""),
-            "student_prn": student_row.get("prn", ""),
-            "student_image": student_row.get("img_url", ""),
-            "college_id": student_row.get("college_id", ""),
-            "classroom_id": student_row.get("classroom_id", ""),
-            "classroom_name": classroom.get("classroom_name", ""),
+            "student_name": student.get("student_name"),
+            "student_email": student.get("email"),
+            "student_prn": student.get("prn"),
+            "student_image": student.get("img_url"),
+            "college_id": student.get("college_id"),
+            "classroom_id": student.get("classroom_id"),
+            "classroom_name": classroom.get("classroom_name"),
             "present_count": present_count,
             "absent_count": absent_count,
             "pending_count": pending_count,
@@ -436,7 +442,7 @@ def get_student_dashboard_data(student_name: str, student_email: str, college_id
         }
 
     except Exception as e:
-        print("Error building student dashboard:", e)
+        print("Error:", e)
         return None
 
 def defaulter_students(college_id: int, classroom_id: str):
@@ -565,8 +571,21 @@ def get_student_dashboard_data_by_prn(college_id: int, classroom_id: int, prn: s
             day_slots = []
 
             for key, value in row.items():
-                if key.startswith("slot_"):
-                    normalized = str(value).strip().lower() if value is not None else ""
+
+                if key.startswith("slot_") and not key.endswith("_teacher"):
+
+                    teacher_key = f"{key}_teacher"
+                    teacher_raw = row.get(teacher_key)
+
+                    if isinstance(teacher_raw, str):
+                        teacher_name = teacher_raw.strip()
+                    else:
+                        teacher_name = ""
+
+                    if isinstance(value, str):
+                        normalized = value.strip().lower()
+                    else:
+                        normalized = ""
 
                     if normalized == "present":
                         status = "present"
@@ -580,11 +599,16 @@ def get_student_dashboard_data_by_prn(college_id: int, classroom_id: int, prn: s
 
                     day_slots.append({
                         "slot_label": format_slot_label(key),
-                        "status": status
+                        "status": status,
+                        "teacher": teacher_name if teacher_name else "-"
                     })
 
-            day_slots.sort(key=lambda x: x["slot_label"])
-            attendance[row_date] = day_slots
+            audit_logs = row.get("audit") or []
+
+            attendance[row_date] = {
+                "slots": sorted(day_slots, key=lambda x: x["slot_label"]),
+                "audit": audit_logs
+            }
 
         marked_total = present_count + absent_count
         attendance_percent = round((present_count / marked_total) * 100, 2) if marked_total > 0 else 0
@@ -637,6 +661,80 @@ def get_students_from_classroom_table(classroom_table: str):
         print("Error fetching students:", e)
         return []
 
+def update_attendance_slot(
+    college_id: int,
+    classroom_id: int,
+    prn: str,
+    attendance_date: str,
+    slot_label: str,
+    new_status: str,
+    teacher_name: str
+):
+    try:
+        classroom = get_classroom_by_id(classroom_id)
+        if not classroom or classroom["college_id"] != college_id:
+            return False
+
+        attendance_table = classroom.get("attendance_table")
+
+        if not attendance_table or not is_valid_table_name(attendance_table):
+            return False
+
+        slot_key = "slot_" + slot_label.replace(":", "_").replace(" - ", "_")
+
+        teacher_key = f"{slot_key}_teacher"
+
+        response = (
+            supabase
+            .table(attendance_table)
+            .select("*")
+            .eq("college_id", college_id)
+            .eq("classroom_id", classroom_id)
+            .eq("prn", prn)
+            .eq("attendance_date", attendance_date)
+            .limit(1)
+            .execute()
+        )
+
+        rows = response.data or []
+        if not rows:
+            return False
+
+        row = rows[0]
+
+        old_status = row.get(slot_key)
+
+        existing_audit = row.get("audit") or []
+
+        new_log = {
+            "slot": slot_label,
+            "teacher": teacher_name,
+            "from": old_status,
+            "to": new_status
+        }
+
+        existing_audit.append(new_log)
+
+        update_data = {
+            slot_key: new_status,
+            teacher_key: teacher_name,
+            "audit": existing_audit
+        }
+
+        (
+            supabase
+            .table(attendance_table)
+            .update(update_data)
+            .eq("id", row["id"])
+            .execute()
+        )
+
+        return True
+
+    except Exception as e:
+        print("Error updating attendance:", e)
+        return False
+    
 
 def upload_student_image_bytes(folder_name: str, student_prn: str, file_name: str, file_bytes: bytes):
     try:
