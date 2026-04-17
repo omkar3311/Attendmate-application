@@ -434,6 +434,7 @@ def get_student_dashboard_data(student_name: str, student_email: str, college_id
             "college_id": student.get("college_id"),
             "classroom_id": student.get("classroom_id"),
             "classroom_name": classroom.get("classroom_name"),
+            "class_teacher" : classroom.get("class_teacher"),
             "present_count": present_count,
             "absent_count": absent_count,
             "pending_count": pending_count,
