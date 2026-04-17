@@ -23,7 +23,9 @@ from utils import (
     defaulter_students,
     current_month_range,
     get_attendance_of_class,
-    update_attendance_slot
+    update_attendance_slot,
+    update_class_teacher,
+    update_defaulter_threshold
     
 )
 
@@ -588,6 +590,41 @@ def staff_dashboard(request: Request):
             "success_message": None,
         }
     )
+    
+@app.post("/classroom/{classroom_id}/set-defaulter")
+def set_defaulter(
+    classroom_id: int,
+    defaulter: int = Form(...)
+):
+    if CURRENT_USER["role"] not in ["teacher", "hod"]:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    result = update_defaulter_threshold(classroom_id, defaulter)
+
+    if not result:
+        raise HTTPException(status_code=400, detail="Update failed")
+
+    return RedirectResponse(url=f"/classroom/{classroom_id}", status_code=303)
+
+@app.post("/classroom/{classroom_id}/set-teacher")
+def set_teacher(
+    classroom_id: int,
+    class_teacher: str = Form(...)
+):
+    if CURRENT_USER["role"] != "hod":
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    result = update_class_teacher(
+                    classroom_id,
+                    class_teacher.strip(),
+                    CURRENT_USER["college_id"]
+                )
+
+    if not result:
+        raise HTTPException(status_code=400, detail="Update failed")
+
+    return RedirectResponse(url=f"/classroom/{classroom_id}", status_code=303)
+
 @app.get("/classroom/{classroom_id}")
 def classroom_dashboard(request: Request, classroom_id: int):
     if CURRENT_USER["college_id"] is None or not CURRENT_USER["role"]:
@@ -614,6 +651,7 @@ def classroom_dashboard(request: Request, classroom_id: int):
     base_url = str(request.base_url).rstrip("/")
     student_join_link = f"http://127.0.0.1:8000/student/invite/{CURRENT_COLLEGE['id']}/{classroom['id']}"
     teacher_join_link = f"{base_url}/teacher/join"
+    teachers = get_teachers_by_college(CURRENT_USER["college_id"])
 
     return templates.TemplateResponse(
         "class_dashboard.html",
@@ -629,6 +667,7 @@ def classroom_dashboard(request: Request, classroom_id: int):
             "current_role": CURRENT_USER["role"],
             "student_join_link": student_join_link,
             "teacher_join_link": teacher_join_link,
+            "teachers": teachers,
         }
     )
 
