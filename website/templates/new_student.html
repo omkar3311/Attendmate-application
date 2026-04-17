@@ -389,6 +389,45 @@
             opacity: 0.5;
             padding: 10px;
         }
+
+.edit-btn {
+    background: #fb923c; 
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: 0.2s ease;
+}
+
+.edit-btn:hover {
+    background: #f97316;
+}
+
+.edit-btn .icon {
+    font-size: 14px;
+}
+
+.status-select {
+    padding: 5px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    margin-top: 4px;
+}
+
+.save-btn {
+    background: #22c55e;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    margin-left: 6px;
+    cursor: pointer;
+}
     </style>
 </head>
 <body>
@@ -481,42 +520,69 @@
     </div>
 
     {% if attendance %}
-        {% for date, slots in attendance.items() %}
-        <div class="attendance-card">
-            <h3>{{ date }}</h3>
+    {% for date, day in attendance.items() %}
+    <div class="attendance-card">
+        <h3>{{ date }}</h3>
 
-            <table>
-                <tr>
-                    <th>Slot</th>
-                    <th>Status</th>
-                </tr>
+        <table>
+            <tr>
+                <th>Slot</th>
+                <th>Status</th>
+                <th>Teacher</th>
 
-                {% for row in slots %}
-                <tr>
-                    <td class="slot-name">{{ row.slot_label }}</td>
-                    <td>
-                        {% if row.status == "present" %}
-                            <span class="status-badge status-present">Present</span>
-                        {% elif row.status == "absent" %}
-                            <span class="status-badge status-absent">Absent</span>
-                        {% else %}
-                            <span class="status-badge status-pending">Pending</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
+                {% if current_role in ['teacher', 'hod'] %}
+                <th>Action</th>
+                {% endif %}
+            </tr>
+
+            {% for row in day.slots %}
+            <tr>
+                <td class="slot-name">{{ row.slot_label }}</td>
+
+                <td>
+                    {% if row.status == "present" %}
+                        <span class="status-badge status-present">Present</span>
+                    {% elif row.status == "absent" %}
+                        <span class="status-badge status-absent">Absent</span>
+                    {% else %}
+                        <span class="status-badge status-pending">Pending</span>
+                    {% endif %}
+                </td>
+
+                <td>{{ row.teacher }}</td>
+
+                {% if current_role in ['teacher', 'hod'] %}
+                <td>
+                    <button class="edit-btn" onclick="editAttendance(this, '{{ date }}','{{ row.slot_label }}','{{ row.status }}')">
+                        <span class="icon">✏️</span> Edit
+                    </button>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </table>
+
+        {% if day.audit %}
+        <div class="audit-box" style="margin-top:10px;">
+            <strong>Changes:</strong>
+
+            {% for log in day.audit %}
+                <p style="margin:4px 0; font-size:14px;">
+                    {{ log.teacher }} changed {{ log.from }} → {{ log.to }} for {{ log.slot }}
+                </p>
+            {% endfor %}
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="attendance-card">
-            <div class="empty-box">
-                No attendance data found for this student.
-            </div>
-        </div>
-    {% endif %}
-</div>
+        {% endif %}
 
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="attendance-card">
+        <div class="empty-box">
+            No attendance data found for this student.
+        </div>
+    </div>
+{% endif %}
 <div class="footer">
         © 2026 AttendMate
 </div>
@@ -660,6 +726,53 @@
         document.getElementById("prevChart").disabled = true;
         document.getElementById("nextChart").disabled = true;
     }
+
+function editAttendance(btn, date, slot, currentStatus) {
+
+    if (btn.nextElementSibling) return;
+
+    let select = document.createElement("select");
+    select.className = "status-select";
+
+    let newOption = document.createElement("option");
+
+    if (currentStatus === "present") {
+        newOption.value = "absent";
+        newOption.text = "Mark Absent";
+    } else {
+        newOption.value = "present";
+        newOption.text = "Mark Present";
+    }
+
+    select.appendChild(newOption);
+
+    let saveBtn = document.createElement("button");
+    saveBtn.innerText = "Save";
+    saveBtn.className = "save-btn";
+
+    saveBtn.onclick = async function () {
+    let newStatus = select.value;
+
+    const formData = new FormData();
+    formData.append("classroom_id", "{{ classroom_id }}");
+    formData.append("prn", "{{ student_prn }}");
+    formData.append("attendance_date", date);
+    formData.append("slot_label", slot);
+    formData.append("new_status", newStatus);
+
+    await fetch("/attendance/update", {
+        method: "POST",
+        body: formData
+    });
+
+    location.reload();
+};
+
+    btn.parentNode.appendChild(select);
+    btn.parentNode.appendChild(saveBtn);
+}
+
+
 </script>
 </body>
 </html>
