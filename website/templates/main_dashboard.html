@@ -216,9 +216,10 @@
             <div class="topbar-header">
                 <div class="topbar-info">
                     <h1>{{ college.college_name | title }} Dashboard</h1>
-                    <p><strong>Creator:</strong> {{ college.creator }}</p>
+                    <p><strong>Name:</strong> {{ college.creator }}</p>
                     <p><strong>Email:</strong> {{ college.creator_email }}</p>
                     <p class="stats">Total Classrooms: {{ classroom_count }}</p>
+                    <p><strong>College id:</strong> {{ college.id }}</p>
 
                     {% if current_role %}
                         <div class="role-badge">
@@ -261,6 +262,7 @@
                                 <p><strong>Defaulter Count:</strong> {{ data.defaulter_count }}</p>
                                 <p><strong>Defaulter Threshold:</strong> {{ classroom.defualter }} </p>
                                 <p><strong>Class Teacher:</strong> {{ classroom.class_teacher }} </p>
+                                <p><strong>Class ID:</strong> {{ classroom.id }} </p>
                                 <!--
                                 <p><strong>Student Table:</strong> {{ classroom.classroom_table }}</p>
                                 <p><strong>Attendance Table:</strong> {{ classroom.attendance_table }}</p>
