@@ -360,6 +360,18 @@ def init_local_database():
             is_open BOOLEAN DEFAULT TRUE
         );
         """)
+        
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS public.teachers (
+            id INTEGER PRIMARY KEY,
+            college_id INTEGER NOT NULL,
+            teacher_name TEXT NOT NULL,
+            email TEXT,
+            role TEXT,
+            password TEXT,
+            img_url TEXT
+        );
+        """)
 
         cur.execute("""
                     CREATE TABLE IF NOT EXISTS public.login (
@@ -609,6 +621,20 @@ def create_dynamic_attendance_table_in_connection(conn, table_name, slots):
                 sql.Identifier(table_name),
                 sql.Identifier(column_name)
             ))
+            
+            teacher_column = column_name + "_teacher"
+
+            cur.execute(sql.SQL("""
+                ALTER TABLE public.{}
+                ADD COLUMN IF NOT EXISTS {} TEXT;
+            """).format(
+                sql.Identifier(table_name),
+                sql.Identifier(teacher_column)
+            ))
+        cur.execute(sql.SQL("""
+                ALTER TABLE public.{}
+                ADD COLUMN IF NOT EXISTS audit JSONB;
+            """).format(sql.Identifier(table_name)))
 
         index_name = f"{table_name}_prn_date_idx"
         cur.execute(sql.SQL("""
@@ -631,7 +657,89 @@ def create_dynamic_attendance_table_in_connection(conn, table_name, slots):
         if cur:
             cur.close()
 
+# def update_existing_attendance_schema():
+#     local_conn = None
+#     cloud_conn = None
 
+#     try:
+#         local_conn = get_pg_connection()
+#         local_cur = local_conn.cursor()
+
+#         cloud_available = is_cloud_pg_available()
+#         if cloud_available:
+#             cloud_conn = get_cloud_pg_connection()
+#             cloud_cur = cloud_conn.cursor()
+
+#         # get all classrooms
+#         local_cur.execute("""
+#             SELECT attendance_table, slot
+#             FROM public.classrooms
+#         """)
+
+#         classrooms = local_cur.fetchall()
+
+#         for attendance_table, slots in classrooms:
+#             parsed_slots = parse_slot_data(slots)
+
+#             for conn, cur in [(local_conn, local_cur)] + (
+#                 [(cloud_conn, cloud_cur)] if cloud_available else []
+#             ):
+
+#                 for slot_item in parsed_slots:
+#                     start_time = str(slot_item.get("start", "")).strip()
+#                     end_time = str(slot_item.get("end", "")).strip()
+
+#                     if not start_time or not end_time:
+#                         continue
+
+#                     column_name = make_slot_column_name(start_time, end_time)
+#                     teacher_column = column_name + "_teacher"
+
+#                     # attendance column
+#                     cur.execute(sql.SQL("""
+#                         ALTER TABLE public.{}
+#                         ADD COLUMN IF NOT EXISTS {} TEXT;
+#                     """).format(
+#                         sql.Identifier(attendance_table),
+#                         sql.Identifier(column_name)
+#                     ))
+
+#                     # teacher column
+#                     cur.execute(sql.SQL("""
+#                         ALTER TABLE public.{}
+#                         ADD COLUMN IF NOT EXISTS {} TEXT;
+#                     """).format(
+#                         sql.Identifier(attendance_table),
+#                         sql.Identifier(teacher_column)
+#                     ))
+
+#                 cur.execute(sql.SQL("""
+#                     ALTER TABLE public.{}
+#                     ADD COLUMN IF NOT EXISTS audit JSONB;
+#                 """).format(sql.Identifier(attendance_table)))
+
+#         local_conn.commit()
+#         if cloud_available:
+#             cloud_conn.commit()
+
+#         print("✅ Existing tables updated (local + cloud)")
+#         return True
+
+#     except Exception as e:
+#         print("Schema update error:", e)
+#         if local_conn:
+#             local_conn.rollback()
+#         if cloud_conn:
+#             cloud_conn.rollback()
+#         return False
+
+#     finally:
+#         if local_conn:
+#             local_conn.close()
+#         if cloud_conn:
+#             cloud_conn.close()
+# update_existing_attendance_schema() 
+        
 def create_dynamic_student_table(table_name, slots=None):
     
     local_ok = False
@@ -802,6 +910,7 @@ def sync_cloud_images_to_local():
         return False
 
     try:
+    
         classrooms = supabase.table("classrooms").select("*").execute().data
 
         for classroom in classrooms:
@@ -817,10 +926,8 @@ def sync_cloud_images_to_local():
 
                 for file in files:
                     file_name = file["name"]
-
                     local_path = os.path.join(local_folder, file_name)
 
-                    # Skip if already exists
                     if os.path.exists(local_path):
                         continue
 
@@ -831,10 +938,43 @@ def sync_cloud_images_to_local():
                     with open(local_path, "wb") as f:
                         f.write(data)
 
-                    print("Downloaded:", storage_path)
+                    print("Downloaded student:", storage_path)
 
             except Exception as e:
-                print("Image sync error:", e)
+                print("Student image sync error:", e)
+
+        
+        teachers = supabase.table("teachers").select("*").execute().data
+
+        teacher_folder = os.path.join(LOCAL_IMAGE_ROOT, "teachers_faces")
+        os.makedirs(teacher_folder, exist_ok=True)
+
+        import requests
+
+        for teacher in teachers:
+            img_url = teacher.get("img_url")
+            teacher_name = teacher.get("teacher_name")
+
+            if not img_url or not teacher_name:
+                continue
+
+            file_name = teacher_name.strip().lower().replace(" ", "_") + ".jpg"
+            local_path = os.path.join(teacher_folder, file_name)
+
+            if os.path.exists(local_path):
+                continue
+
+            try:
+                response = requests.get(img_url, timeout=10)
+
+                if response.status_code == 200:
+                    with open(local_path, "wb") as f:
+                        f.write(response.content)
+
+                    print("Downloaded teacher:", teacher_name)
+
+            except Exception as e:
+                print("Teacher image download error:", e)
 
         return True
 
@@ -842,6 +982,53 @@ def sync_cloud_images_to_local():
         print("Cloud image sync failed:", e)
         return False
 
+def sync_teachers_to_local():
+    if not is_supabase_available():
+        return False
+
+    conn = None
+    cur = None
+
+    try:
+        teachers_resp = supabase.table("teachers").select("*").execute()
+        teachers = teachers_resp.data or []
+
+        conn = get_pg_connection()
+        cur = conn.cursor()
+
+        for row in teachers:
+            cur.execute("""
+                INSERT INTO public.teachers
+                (id, college_id, teacher_name, email, role, password, img_url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id)
+                DO UPDATE SET
+                    teacher_name = EXCLUDED.teacher_name,
+                    email = EXCLUDED.email,
+                    role = EXCLUDED.role,
+                    password = EXCLUDED.password,
+                    img_url = EXCLUDED.img_url
+            """, (
+                row["id"],
+                row.get("college_id"),
+                row.get("teacher_name"),
+                row.get("email"),
+                row.get("role"),
+                row.get("password"),
+                row.get("img_url")
+            ))
+
+        conn.commit()
+        return True
+
+    except Exception as e:
+        print("Error syncing teachers:", e)
+        return False
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+        
 # PROCESS PENDING SYNC QUEUE
 
 def process_sync_queue():
@@ -1727,7 +1914,7 @@ def add_student_to_classroom(class_name, student_name, file_path, student_prn, p
 
 # ATTENDANCE
 
-def mark_attendance_for_slot(class_name, recognized_people):
+def mark_attendance_for_slot(class_name, recognized_students, recognized_teachers):
     conn = None
     cur = None
 
@@ -1752,6 +1939,12 @@ def mark_attendance_for_slot(class_name, recognized_people):
             print("No active slot right now")
             return False
 
+        teacher_column = slot_column + "_teacher"
+
+        teacher_name = None
+        if recognized_teachers:
+            teacher_name = list(recognized_teachers)[0]
+
         conn = get_pg_connection()
         cur = conn.cursor()
 
@@ -1760,37 +1953,37 @@ def mark_attendance_for_slot(class_name, recognized_people):
                 sql.Identifier(classroom_table)
             )
         )
-
         students = cur.fetchall()
+
         if not students:
             print("No students found")
             return False
 
         today = date.today()
-        # recognized_set = {str(x).strip().lower() for x in recognized_people if x}
-        
+
         name_to_prn = {
             str(student_name).strip().lower(): str(prn).strip().lower()
             for student_name, prn in students
         }
 
-        recognized_set = {
+        recognized_prns = {
             name_to_prn.get(str(x).strip().lower())
-            for x in recognized_people
+            for x in recognized_students
             if name_to_prn.get(str(x).strip().lower())
         }
+
         for student_name, prn_raw in students:
             prn = str(prn_raw).strip().lower()
-            is_recognized = prn in recognized_set
-            print(student_name , prn)
+            is_recognized = prn in recognized_prns
 
             cur.execute(
                 sql.SQL("""
-                    SELECT {}
+                    SELECT {}, {}
                     FROM public.{}
                     WHERE prn = %s AND attendance_date = %s
                 """).format(
                     sql.Identifier(slot_column),
+                    sql.Identifier(teacher_column),
                     sql.Identifier(attendance_table)
                 ),
                 (prn, today)
@@ -1801,25 +1994,20 @@ def mark_attendance_for_slot(class_name, recognized_people):
             if result:
                 current_status = result[0]
 
-                if current_status is None:
-                    current_status = "absent"
-
-                if current_status == "present":
-                    continue  
-
-                if current_status == "absent" and is_recognized:
+                if current_status != "present" and is_recognized:
                     cur.execute(
                         sql.SQL("""
                             UPDATE public.{}
-                            SET {} = %s
+                            SET {} = %s,
+                                {} = %s
                             WHERE prn = %s AND attendance_date = %s
                         """).format(
                             sql.Identifier(attendance_table),
-                            sql.Identifier(slot_column)
+                            sql.Identifier(slot_column),
+                            sql.Identifier(teacher_column)
                         ),
-                        ("present", prn, today)
+                        ("present", teacher_name, prn, today)
                     )
-
 
             else:
                 status = "present" if is_recognized else "absent"
@@ -1827,33 +2015,17 @@ def mark_attendance_for_slot(class_name, recognized_people):
                 cur.execute(
                     sql.SQL("""
                         INSERT INTO public.{}
-                        (college_id, classroom_id, student_name, prn, attendance_date, {})
-                        VALUES (%s, %s, %s, %s, %s, %s)
+                        (college_id, classroom_id, student_name, prn, attendance_date, {}, {})
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """).format(
                         sql.Identifier(attendance_table),
-                        sql.Identifier(slot_column)
+                        sql.Identifier(slot_column),
+                        sql.Identifier(teacher_column)
                     ),
-                    (college_id, classroom_id, student_name, prn, today, status)
+                    (college_id, classroom_id, student_name, prn, today, status, teacher_name)
                 )
 
         conn.commit()
-
-        if is_supabase_available():
-            try:
-                ok = sync_attendance_date_to_cloud(attendance_table, str(today))
-                if not ok:
-                    enqueue_sync("attendance_sync", "sync_date", attendance_table, {
-                        "attendance_date": str(today)
-                    })
-            except Exception as cloud_error:
-                print("Cloud attendance sync failed, queued:", cloud_error)
-                enqueue_sync("attendance_sync", "sync_date", attendance_table, {
-                    "attendance_date": str(today)
-                })
-        else:
-            enqueue_sync("attendance_sync", "sync_date", attendance_table, {
-                "attendance_date": str(today)
-            })
 
         return True
 
@@ -1868,8 +2040,7 @@ def mark_attendance_for_slot(class_name, recognized_people):
             cur.close()
         if conn:
             conn.close()
-
-
+            
 def get_attendance_by_date(class_name, attendance_date=None):
     conn = None
     cur = None
