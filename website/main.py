@@ -22,7 +22,8 @@ from utils import (
     get_college_by_id,
     defaulter_students,
     current_month_range,
-    get_attendance_of_class
+    get_attendance_of_class,
+    update_attendance_slot
     
 )
 
@@ -441,7 +442,7 @@ def student_invite_login(
 
 
 @app.get("/student/dashboard")
-def student_dashboard(request: Request):
+def     student_dashboard(request: Request):
     if (
         not CURRENT_STUDENT["name"]
         or not CURRENT_STUDENT["email"]
@@ -477,13 +478,24 @@ def student_dashboard(request: Request):
     absent_chart_data = []
     pending_chart_data = []
 
-    for date, slots in attendance.items():
+    for date, data in attendance.items():
+
+        if isinstance(data, dict):
+            slots = data.get("slots", [])
+        else:
+            slots = data  # old format
+
         present_count = 0
         absent_count = 0
         pending_count = 0
 
         for row in slots:
-            status = row.get("status", "").lower()
+
+            if isinstance(row, dict):
+                status = row.get("status", "").lower()
+            else:
+                status = str(row).lower()
+
             if status == "present":
                 present_count += 1
             elif status == "absent":
@@ -505,6 +517,7 @@ def student_dashboard(request: Request):
             "present_chart_data": present_chart_data,
             "absent_chart_data": absent_chart_data,
             "pending_chart_data": pending_chart_data,
+            
         }
     )
 
@@ -750,7 +763,9 @@ def view_student_page(request: Request, classroom_id: int, prn: str):
     absent_chart_data = []
     pending_chart_data = []
 
-    for date, slots in attendance.items():
+    for date, data in attendance.items():
+        slots = data.get("slots", [])
+
         present_count = 0
         absent_count = 0
         pending_count = 0
@@ -778,8 +793,36 @@ def view_student_page(request: Request, classroom_id: int, prn: str):
             "present_chart_data": present_chart_data,
             "absent_chart_data": absent_chart_data,
             "pending_chart_data": pending_chart_data,
+            "current_role": CURRENT_USER["role"],
         }
     )
+
+@app.post("/attendance/update")
+async def update_attendance(
+    request: Request,
+    classroom_id: int = Form(...),
+    prn: str = Form(...),
+    attendance_date: str = Form(...),
+    slot_label: str = Form(...),
+    new_status: str = Form(...)
+):
+    if CURRENT_USER["role"] not in ["teacher", "hod"]:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    success = update_attendance_slot(
+        college_id=CURRENT_USER["college_id"],
+        classroom_id=classroom_id,
+        prn=prn,
+        attendance_date=attendance_date,
+        slot_label=slot_label,
+        new_status=new_status,
+        teacher_name=CURRENT_USER["name"]
+    )
+
+    if not success:
+        raise HTTPException(status_code=400, detail="Update failed")
+
+    return {"message": "Attendance updated"}
 
 @app.get("/classroom/{classroom_id}/export/csv")
 def export_classroom_csv(classroom_id: int):
