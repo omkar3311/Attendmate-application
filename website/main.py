@@ -2,6 +2,10 @@ from fastapi import FastAPI, Request, HTTPException, Form, UploadFile, File
 from fastapi.responses import StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from groq import Groq
+from dotenv import load_dotenv
+import os
 import csv
 import io
 
@@ -25,7 +29,9 @@ from utils import (
     get_attendance_of_class,
     update_attendance_slot,
     update_class_teacher,
-    update_defaulter_threshold
+    update_defaulter_threshold,
+    search, 
+    reset_session
     
 )
 
@@ -938,4 +944,58 @@ def export_classroom_csv(classroom_id: int):
             "Content-Disposition": f"attachment; filename={safe_classroom_name}_attendance.csv"
         }
     )
+    
+load_dotenv()
+
+groq = Groq(api_key=os.getenv("API_KEY"))
+
+class ChatRequest(BaseModel):
+    query: str
+    file_name: str
+    session_id: str
+
+
+@app.post("/chat/groq")
+def chat_groq(request: ChatRequest):
+
+    contexts = search(
+        request.file_name,
+        request.query,
+        request.session_id
+    )
+
+    context = "\n".join(contexts)
+
+    response = groq.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {
+                "role": "system",
+                "content": "Answer only using context"
+            },
+            {
+                "role": "user",
+                "content": f"""
+Context:
+{context}
+
+Question:
+{request.query}
+
+Answer:
+"""
+            }
+        ],
+        temperature=0.3
+    )
+
+    return {
+        "answer": response.choices[0].message.content
+    }
+
+@app.post("/reset")
+def reset(session_id: str):
+    reset_session(session_id)
+    return {"message": "session reset"}
+    
 #End

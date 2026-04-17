@@ -427,7 +427,179 @@
     border-radius: 6px;
     margin-left: 6px;
     cursor: pointer;
-}
+}   
+    #chatbot-toggle {
+            position: fixed;
+            top: auto;
+            left: auto;
+            bottom: 90px;
+            right: 20px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 9999;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%   { transform: translateY(0px); }
+            50%  { transform: translateY(-6px); }
+            100% { transform: translateY(0px); }
+        }
+        #chatbot-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.6);
+        }
+
+        #chatbot-container {
+            position: fixed;
+            top: auto;
+            left: auto;
+            bottom: 90px;
+            right: 20px;
+            width: 340px;
+            height: 480px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(14px);
+            border-radius: 18px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            z-index: 9999;
+        }
+
+        #chatbot-header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #chatbot-close {
+            background: transparent;
+            border: none;
+            color: #cbd5f5;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #chatbot-close:hover {
+            color: white;
+        }
+
+
+        #chatbot-messages {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            scrollbar-width: thin;
+        }
+
+        .chat-user,
+        .chat-bot {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            line-height: 1.4;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .chat-user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bot {
+            align-self: flex-start;
+            background: #f1f5f9;
+            color: #0f172a;
+            border-bottom-left-radius: 4px;
+        }
+
+
+        #chatbot-input-area {
+            display: flex;
+            padding: 10px;
+            gap: 8px;
+            border-top: 1px solid #e2e8f0;
+            background: rgba(255,255,255,0.9);
+        }
+
+        #chatbot-input {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            outline: none;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        #chatbot-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+        }
+
+
+        #chatbot-send {
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        #chatbot-send:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4);
+        }
+
+
+        .typing::after {
+            content: "...";
+            animation: blink 1s infinite;
+            margin-left: 3px;
+        }
+
+        @keyframes blink {
+            0% {opacity: 0}
+            50% {opacity: 1}
+            100% {opacity: 0}
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
     </style>
 </head>
 <body>
@@ -476,7 +648,7 @@
                     </div>
                     <div class="meta-box">
                         <span class="label">Class Teacher</span>
-                        <span class="value">{{ class_   teacher }}</span>
+                        <span class="value">{{ class_teacher }}</span>
                     </div>
                 </div>
             </div>
@@ -587,6 +759,28 @@
         </div>
     </div>
 {% endif %}
+
+    <div id="chatbot-toggle">💬</div>
+
+    <div id="chatbot-container">
+
+        <div id="chatbot-header">
+            <span>Ask about AttendMate</span>
+            <button id="chatbot-close">✖</button>
+        </div>
+
+        <div id="chatbot-messages"></div>
+
+        <div id="chatbot-input-area">
+            <input 
+                type="text" 
+                id="chatbot-input" 
+                placeholder="Ask something..."
+            />
+            <button id="chatbot-send">Send</button>
+        </div>
+
+    </div>
 <div class="footer">
         © 2026 AttendMate
 </div>
@@ -776,7 +970,139 @@ function editAttendance(btn, date, slot, currentStatus) {
     btn.parentNode.appendChild(saveBtn);
 }
 
+const toggle = document.getElementById("chatbot-toggle");
+const container = document.getElementById("chatbot-container");
+const closeBtn = document.getElementById("chatbot-close");
 
+const input = document.getElementById("chatbot-input");
+const sendBtn = document.getElementById("chatbot-send");
+const messages = document.getElementById("chatbot-messages");
+
+let chatHistory = [];
+
+toggle.onclick = () => {
+    container.style.display = "flex";
+};
+
+closeBtn.onclick = () => {
+    container.style.display = "none";
+};
+
+sendBtn.onclick = sendMessage;
+input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendMessage();
+});
+
+async function sendMessage(){
+
+let text = input.value.trim();
+if(!text) return;
+
+addMessage(text,"user");
+input.value = "";
+
+const botDiv = document.createElement("div");
+botDiv.className = "chat-bot";
+
+botDiv.innerHTML = `<div class="stream-text"></div>`;
+
+messages.appendChild(botDiv);
+
+const streamText = botDiv.querySelector(".stream-text");
+
+messages.scrollTop = messages.scrollHeight;
+
+const response = await fetch("/chat/groq",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+query:text,
+file_name:"data/attendmate.txt",
+session_id:"student"
+})
+});
+
+const data = await response.json();
+
+let fullText = data.answer;
+
+let i = 0;
+
+function stream(){
+
+if(i < fullText.length){
+
+let current = fullText.substring(0,i);
+
+streamText.innerHTML = current + `<span class="typing">...</span>`;
+
+i++;
+
+messages.scrollTop = messages.scrollHeight;
+
+setTimeout(stream,8);
+
+}else{
+
+streamText.innerHTML = fullText;
+
+}
+
+}
+
+stream();
+
+}
+
+function addMessage(text, sender) {
+    const div = document.createElement("div");
+    div.className = sender === "user" ? "chat-user" : "chat-bot";
+    div.innerText = text;
+
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+
+    chatHistory.push({ sender, text });
+}
+
+
+dragElement(toggle);
+
+function dragElement(el) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+    el.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e.preventDefault();
+
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+
+        document.onmouseup = closeDrag;
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e.preventDefault();
+
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+
+        el.style.top = (el.offsetTop - pos2) + "px";
+        el.style.left = (el.offsetLeft - pos1) + "px";
+    }
+
+    function closeDrag() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+}   
 </script>
 </body>
 </html>
