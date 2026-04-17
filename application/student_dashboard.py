@@ -14,7 +14,7 @@ from database import (
     get_classroom_full_data_by_name,
     update_classroom,load_qss_file,delete_classroom
 )
-from recognition import reload_known_faces
+# from recognition.FaceRecognitionEngine import reload_known_faces
 
 
 class EditClassroomDialog(QDialog):
@@ -184,7 +184,7 @@ class AddStudentWorker(QObject):
     finished = Signal(object)
     error = Signal(str)
 
-    def __init__(self, class_name, student_name, image_path, student_prn, password, student_email):
+    def __init__(self, class_name, student_name, image_path, student_prn, password, student_email , recognizer):
         super().__init__()
         self.class_name = class_name
         self.student_name = student_name
@@ -192,6 +192,7 @@ class AddStudentWorker(QObject):
         self.student_prn = student_prn
         self.password = password
         self.student_email = student_email
+        self.recognizer = recognizer
 
     def run(self):
         try:
@@ -206,7 +207,7 @@ class AddStudentWorker(QObject):
 
             if result:
                 try:
-                    reload_known_faces()
+                    self.recognizer.reload_known_faces()
                 except Exception as e:
                     print("Face reload warning:", e)
 
@@ -220,13 +221,14 @@ class AddStudentWorker(QObject):
 
 class Student(QWidget):
     classroom_deleted = Signal()
-    def __init__(self, camera_source, class_name):
+    def __init__(self, camera_source, class_name, recognizer):
         super().__init__()
 
         load_qss_file(self, "student_dashboard.qss")
         classroom_deleted = Signal()
         self.camera_source = camera_source
         self.class_name = class_name
+        self.recognizer = recognizer
 
         self.setWindowTitle(f"Class {class_name}")
         self.resize(1000, 560)
@@ -391,7 +393,8 @@ class Student(QWidget):
             image_path,
             student_prn,
             password,
-            student_email
+            student_email,
+            self.recognizer
         )
 
         self.add_student_worker.moveToThread(self.add_student_thread)
