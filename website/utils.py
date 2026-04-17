@@ -661,6 +661,51 @@ def get_students_from_classroom_table(classroom_table: str):
         print("Error fetching students:", e)
         return []
 
+def update_defaulter_threshold(classroom_id: int, defaulter: int):
+    try:
+        response = (
+            supabase
+            .table("classrooms")
+            .update({"defualter": defaulter})
+            .eq("id", classroom_id)
+            .execute()
+        )
+
+        return response.data[0] if response.data else None
+
+    except Exception as e:
+        print("Error updating defaulter threshold:", e)
+        return None
+    
+def update_class_teacher(classroom_id: int, class_teacher: str, college_id: int):
+    try:
+        teacher_check = (
+            supabase
+            .table("teachers")
+            .select("teacher_name")
+            .eq("college_id", college_id)
+            .eq("teacher_name", class_teacher)
+            .limit(1)
+            .execute()
+        )
+
+        if not teacher_check.data:
+            return None  
+
+        response = (
+            supabase
+            .table("classrooms")
+            .update({"class_teacher": class_teacher})
+            .eq("id", classroom_id)
+            .execute()
+        )
+
+        return response.data[0] if response.data else None
+
+    except Exception as e:
+        print("Error updating class teacher:", e)
+        return None
+
 def update_attendance_slot(
     college_id: int,
     classroom_id: int,
