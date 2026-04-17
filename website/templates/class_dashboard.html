@@ -396,6 +396,47 @@
             border-color: #2563eb;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
         }
+        .meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* bigger + cleaner */
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .meta-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            min-height: 80px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+
+            transition: 0.2s ease;
+        }
+
+        .meta-box:hover {
+            border-color: #c7d2fe;
+            background: #f1f5ff;
+        }
+        .meta-box .label {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .meta-box .value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+            word-break: break-word;
+        }
+
     </style>
 </head>
 <body>
@@ -407,14 +448,44 @@
     <div class="container">
 
         <div class="header-box">
-            <h1>{{ classroom.classroom_name | title }}</h1>
-            <p><strong>College:</strong> {{ college.college_name | title }}</p>
-            <p><strong>Total Students:</strong> {{ student_count }}</p>
-            <p><strong>Total Defaulter:</strong> {{ defualters_count }} </p>
-            <p><strong>Defaulter Threshold:</strong> {{ classroom.defualter }} </p>
-            <p><strong>Class Teacher:</strong> {{ classroom.class_teacher }} </p>
-            <p><strong>Class ID:</strong> {{ classroom.id }} </p>
-            <p><strong>Camera Source:</strong> {{ classroom.camera_input }}</p>
+            <div class="meta">
+    <div class="meta-box">
+        <span class="label">College</span>
+        <span class="value">{{ college.college_name | title }}</span>
+    </div>
+
+    <div class="meta-box">
+        <span class="label">Total Students</span>
+        <span class="value">{{ student_count }}</span>
+    </div>
+
+    <div class="meta-box">
+        <span class="label">Total Defaulters</span>
+        <span class="value">{{ defualters_count }}</span>
+    </div>
+
+    <div class="meta-box">
+        <span class="label">Defaulter Threshold</span>
+        <span class="value">{{ classroom.defualter }}%</span>
+    </div>
+
+    <div class="meta-box">
+        <span class="label">Class Teacher</span>
+        <span class="value">
+            {{ classroom.class_teacher or "Not Assigned" }}
+        </span>
+    </div>
+
+    <div class="meta-box">
+        <span class="label">Class ID</span>
+        <span class="value">{{ classroom.id }}</span>
+    </div>
+
+    <div class="meta-box">
+        <span class="label">Camera Source</span>
+        <span class="value">{{ classroom.camera_input }}</span>
+    </div>
+</div>  
 
             {% if current_role %}
                 <div class="role-badge">
