@@ -281,7 +281,7 @@ def get_classrooms_by_college(college_id: int):
             .table("classrooms")
             .select(
                 "id, college_id, classroom_name, classroom_table, "
-                "classroom_faces, camera_input, slot, attendance_table"
+                "classroom_faces, camera_input, slot, attendance_table", "defualter", "class_teacher"
             )
             .eq("college_id", college_id)
             .order("classroom_name")
@@ -302,7 +302,7 @@ def get_classroom_by_id(classroom_id: int):
             .table("classrooms")
             .select(
                 "id, college_id, classroom_name, classroom_table, "
-                "classroom_faces, camera_input, slot, attendance_table"
+                "classroom_faces, camera_input, slot, attendance_table", "defualter", "class_teacher"
             )
             .eq("id", classroom_id)
             .limit(1)
@@ -501,7 +501,7 @@ def defaulter_students(college_id: int, classroom_id: str):
                 "student_name": student["student_name"],
                 "prn": prn,
                 "attendance_percent": round(percent, 2),
-                "defaulter": "YES" if percent < 75 else "NO"
+                "defaulter": "YES" if percent < classroom["defualter"] else "NO"
             })
 
         return result
