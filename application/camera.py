@@ -47,7 +47,7 @@ class CameraWorker(QThread):
         self.running = True
         self.camera_enabled = True
 
-        self.recognizer = FaceRecognitionEngine()
+        self.recognizer = FaceRecognitionEngine(self.class_name)
 
         self.recognized_students = set()
         self.last_db_write = 0
@@ -88,13 +88,19 @@ class CameraWorker(QThread):
             frame = cv2.flip(frame, 1)
 
             if is_slot_active(self.slots):
-                frame, people = self.recognizer.detect_and_recognize(frame)
+                frame, students, teachers = self.recognizer.detect_and_recognize(frame)
+                people = []
                 # frame, people = self.recognizer.detect_and_recognize(frame, self.class_name)
                 self.status_ready.emit("Recognition ON")
-                for _, identity, _, _, _, _ in people:
-                    if identity:
-                        student_identity = str(identity).strip().lower()
-                        self.recognized_students.add(student_identity)
+                for name in students:
+                    if name:
+                        self.recognized_students.add(name)
+
+                self.recognized_teachers = set()
+
+                for name in teachers:
+                    if name:
+                        self.recognized_teachers.add(name)
 
                 now = time.time()
 
@@ -107,7 +113,8 @@ class CameraWorker(QThread):
                                 print(self.recognized_students)
                                 ok = mark_attendance_for_slot(
                                     self.class_name,
-                                    self.recognized_students
+                                    self.recognized_students,
+                                    self.recognized_teachers
                                 )
                             except Exception as e:
                                 print("Attendance skipped (class deleted):", e)
@@ -299,7 +306,7 @@ class CameraWidget(QWidget):
 
     def open_student_page(self):
         if self.student_page is None:
-            self.student_page = Student(self.camera_source, self.class_name)
+            self.student_page = Student(self.camera_source, self.class_name , recognizer=self.worker.recognizer)
 
             self.student_page.classroom_deleted.connect(self.handle_classroom_deleted)
 
