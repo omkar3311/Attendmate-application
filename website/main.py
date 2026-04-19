@@ -757,21 +757,112 @@ def classroom_dashboard(request: Request, classroom_id: int):
         raise HTTPException(status_code=404, detail="Classroom not found")
 
     if classroom["college_id"] != CURRENT_USER["college_id"]:
-        raise HTTPException(status_code=403, detail="This classroom does not belong to current college")
+        raise HTTPException(status_code=403, detail="Unauthorized")
 
     students = get_students_from_classroom_table(classroom["classroom_table"])
-    defaulters = defaulter_students(classroom["college_id"] ,classroom_id)
+    defaulters = defaulter_students(classroom["college_id"], classroom_id) or []
 
     defaulter_map = {d["prn"]: d["defaulter"] for d in defaulters}
 
     for student in students:
         student["defaulter"] = defaulter_map.get(student.get("prn"), "NO")
-        
-    defaulter_count = sum(1 for student in students if student.get("defaulter") == "YES")
-        
+
+    defaulter_count = sum(1 for s in students if s["defaulter"] == "YES")
+
+    attendance_res = get_attendance_of_class(classroom["attendance_table"])
+    rows = attendance_res.data or []
+
+    total_present = 0
+    total_absent = 0
+
+    daily_map = {}
+    slot_map = {}
+    student_map = {}
+
+    for row in rows:
+
+        date = str(row.get("attendance_date"))
+
+        if date not in daily_map:
+            daily_map[date] = {"present":0,"absent":0}
+
+        prn = str(row.get("prn"))
+
+        if prn not in student_map:
+            student_map[prn] = {"present":0,"absent":0}
+
+        for key, value in row.items():
+
+            if key.startswith("slot_") and not key.endswith("_teacher"):
+
+                status = str(value).lower()
+
+                if key not in slot_map:
+                    slot_map[key] = {"present":0,"absent":0}
+
+                if status == "present":
+                    total_present += 1
+                    daily_map[date]["present"] += 1
+                    slot_map[key]["present"] += 1
+                    student_map[prn]["present"] += 1
+
+                elif status == "absent":
+                    total_absent += 1
+                    daily_map[date]["absent"] += 1
+                    slot_map[key]["absent"] += 1
+                    student_map[prn]["absent"] += 1
+
+    overall_percent = round(
+        (total_present / (total_present + total_absent)) * 100, 2
+    ) if (total_present + total_absent) > 0 else 0
+
+    trend_labels = sorted(daily_map.keys())
+    trend_values = []
+
+    for d in trend_labels:
+        p = daily_map[d]["present"]
+        a = daily_map[d]["absent"]
+        t = p + a
+        trend_values.append(round((p / t) * 100, 2) if t > 0 else 0)
+
+    slot_labels = []
+    slot_values = []
+
+    for k,v in slot_map.items():
+        t = v["present"] + v["absent"]
+        slot_labels.append(k.replace("slot_","").replace("_"," "))
+        slot_values.append(round((v["present"]/t)*100,2) if t > 0 else 0)
+
+    weak_students = []
+
+    for student in students:
+        prn = str(student["prn"])
+        stats = student_map.get(prn, {"present":0,"absent":0})
+        t = stats["present"] + stats["absent"]
+        perc = round((stats["present"]/t)*100,2) if t > 0 else 0
+
+        weak_students.append({
+            "name": student["student_name"],
+            "percent": perc
+        })
+
+    weak_students = sorted(weak_students,key=lambda x:x["percent"])[:5]
+
+    prediction = round(sum(trend_values[-5:]) / len(trend_values[-5:]),2) if trend_values else overall_percent
+
+    alerts = []
+
+    if overall_percent < 75:
+        alerts.append("Class attendance below 75%")
+
+    if defaulter_count > 5:
+        alerts.append("High defaulter count in class")
+
+    if weak_students:
+        alerts.append(f"Lowest attendance: {weak_students[0]['name']}")
+
     base_url = str(request.base_url).rstrip("/")
     student_join_link = f"http://127.0.0.1:8000/student/invite/{CURRENT_COLLEGE['id']}/{classroom['id']}"
-    teacher_join_link = f"{base_url}/teacher/join"
     teachers = get_teachers_by_college(CURRENT_USER["college_id"])
 
     return templates.TemplateResponse(
@@ -781,14 +872,23 @@ def classroom_dashboard(request: Request, classroom_id: int):
             "college": CURRENT_COLLEGE,
             "classroom": classroom,
             "students": students,
-            "defualters_count" : defaulter_count,
+            "defualters_count": defaulter_count,
             "student_count": len(students),
-            "error_message": None,
-            "success_message": None,
             "current_role": CURRENT_USER["role"],
             "student_join_link": student_join_link,
-            "teacher_join_link": teacher_join_link,
             "teachers": teachers,
+
+            "overall_percent": overall_percent,
+            "trend_labels": trend_labels,
+            "trend_values": trend_values,
+            "slot_labels": slot_labels,
+            "slot_values": slot_values,
+            "weak_students": weak_students,
+            "prediction": prediction,
+            "alerts": alerts,
+
+            "error_message": None,
+            "success_message": None
         }
     )
 
