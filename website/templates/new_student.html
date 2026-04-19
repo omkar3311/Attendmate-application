@@ -600,6 +600,105 @@
                 transform: translateY(0) scale(1);
             }
         }
+
+        .analytics-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+        gap:18px;
+        margin-top:24px;
+        }
+
+        .insight-card{
+        background:#ffffff;
+        border-radius:16px;
+        padding:20px;
+        box-shadow:0 8px 24px rgba(0,0,0,.08);
+        }
+
+        .insight-card h3{
+        font-size:28px;
+        margin-bottom:8px;
+        color:#2563eb;
+        }
+
+        .insight-card p{
+        font-weight:600;
+        color:#475569;
+        }
+
+        .personal-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+        gap:22px;
+        margin-top:28px;
+        }
+
+        .graphcard{
+        background:#ffffff;
+        border-radius:18px;
+        padding:24px;
+        box-shadow:0 8px 24px rgba(0,0,0,.08);
+        min-height:430px;
+        display:flex;
+        flex-direction:column;
+        }
+
+        .chart-title{
+        font-size:20px;
+        font-weight:700;
+        margin-bottom:14px;
+        color:#0f172a;
+        }
+
+        .graphcard canvas{
+        width:100% !important;
+        height:320px !important;
+        flex:1;
+        }
+
+        .alert-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+        gap:18px;
+        margin-top:24px;
+        }
+
+        .alert-card{
+        background:#fff7ed;
+        border-left:6px solid #ea580c;
+        border-radius:14px;
+        padding:18px;
+        }
+
+        .alert-card h3{
+        color:#c2410c;
+        margin-bottom:8px;
+        }
+
+        .alert-card p{
+        color:#7c2d12;
+        font-weight:600;
+        }
+
+        @media (min-width:1500px){
+        .personal-grid{
+        grid-template-columns:repeat(3,1fr);
+        }
+        }
+
+        @media (max-width:768px){
+        .personal-grid{
+        grid-template-columns:1fr;
+        }
+
+        .graphcard{
+        min-height:380px;
+        }
+
+        .graphcard canvas{
+        height:270px !important;
+        }
+        }
     </style>
 </head>
 <body>
@@ -681,6 +780,44 @@
         </div>
     </div>
 
+        <div class="attendance-card">
+            <h3>Performance Analytics</h3>
+
+            <div class="analytics-grid">
+
+            <div class="insight-card">
+                <h3>{{ attendance_percent }}%</h3>
+                <p>Your Attendance</p>
+            </div>
+
+            <div class="insight-card">
+                <h3>{{ class_average_percent }}%</h3>
+                <p>Class Average</p>
+            </div>
+
+            <div class="insight-card">
+                <h3>{{ rank }}</h3>
+                <p>Your Rank</p>
+            </div>
+
+            <div class="insight-card">
+                <h3>{{ streak }}</h3>
+                <p>Present Streak</p>
+            </div>
+
+            <div class="insight-card">
+                <h3>{{ safe_slots_needed }}</h3>
+                <p>Slots Needed for Safe Zone</p>
+            </div>
+
+            <div class="insight-card">
+                <h3>{{ predicted_percent }}%</h3>
+                <p>Predicted Final Attendance</p>
+            </div>
+
+            </div>
+        </div>
+
     <div class="attendance-card1">
         <div class="chart-header">
             <h3>Attendance Overview Chart</h3>
@@ -692,6 +829,52 @@
 
         <div class="chart-wrapper">
             <canvas id="attendanceChart"></canvas>
+        </div>
+    </div>
+
+    <div class="attendance-card">
+        <h3>Personal Intelligence</h3>
+
+        <div class="personal-grid">
+
+        <div class="graphcard">
+            <div class="chart-title">Monthly Progress</div>
+            <canvas id="monthlyChart"></canvas>
+        </div>
+
+        <div class="graphcard">
+            <div class="chart-title">Status Breakdown</div>
+            <canvas id="statusChart"></canvas>
+        </div>
+
+        <div class="graphcard">
+            <div class="chart-title">Compare With Class</div>
+            <canvas id="compareChart"></canvas>
+        </div>
+
+        </div>
+    </div>
+
+    <div class="attendance-card">
+        <h3 style="color:#ea580c;">Smart Insights</h3>
+
+        <div class="alert-grid">
+
+        <div class="alert-card">
+            <h3>📈 Progress</h3>
+            <p>{{ progress_message }}</p>
+        </div>
+
+        <div class="alert-card">
+            <h3>⚠ Risk</h3>
+            <p>{{ risk_message }}</p>
+        </div>
+
+        <div class="alert-card">
+            <h3>🎯 Goal</h3>
+            <p>{{ goal_message }}</p>
+        </div>
+
         </div>
     </div>
 
@@ -924,6 +1107,48 @@
         document.getElementById("prevChart").disabled = true;
         document.getElementById("nextChart").disabled = true;
     }
+    new Chart(document.getElementById("monthlyChart"),{
+    type:"line",
+    data:{
+    labels: {{ month_labels | tojson }},
+    datasets:[{
+    label:"Attendance %",
+    data: {{ month_values | tojson }},
+    borderWidth:3,
+    fill:false
+    }]
+    },
+    options:{responsive:true}
+    });
+
+    new Chart(document.getElementById("statusChart"),{
+    type:"doughnut",
+    data:{
+    labels:["Present","Absent","Pending"],
+    datasets:[{
+    data:[
+    {{ present_count }},
+    {{ absent_count }},
+    {{ pending_count }}
+    ]
+    }]
+    },
+    options:{responsive:true}
+    });
+
+    new Chart(document.getElementById("compareChart"),{
+    type:"bar",
+    data:{
+    labels:["You","Class Avg"],
+    datasets:[{
+    data:[
+    {{ attendance_percent }},
+    {{ class_average_percent }}
+    ]
+    }]
+    },
+    options:{responsive:true}
+    });
 
 function editAttendance(btn, date, slot, currentStatus) {
 

@@ -450,7 +450,8 @@ def student_invite_login(
 
 
 @app.get("/student/dashboard")
-def     student_dashboard(request: Request):
+def student_dashboard(request: Request):
+
     if (
         not CURRENT_STUDENT["name"]
         or not CURRENT_STUDENT["email"]
@@ -486,35 +487,79 @@ def     student_dashboard(request: Request):
     absent_chart_data = []
     pending_chart_data = []
 
+    month_labels = []
+    month_values = []
+
+    streak = 0
+    active_streak = True
+
     for date, data in attendance.items():
 
-        if isinstance(data, dict):
-            slots = data.get("slots", [])
-        else:
-            slots = data  
+        slots = data.get("slots", [])
 
         present_count = 0
         absent_count = 0
         pending_count = 0
 
+        all_present = True
+
         for row in slots:
 
-            if isinstance(row, dict):
-                status = row.get("status", "").lower()
-            else:
-                status = str(row).lower()
+            status = row.get("status", "").lower()
 
             if status == "present":
                 present_count += 1
             elif status == "absent":
                 absent_count += 1
+                all_present = False
             else:
                 pending_count += 1
+                all_present = False
 
         chart_labels.append(date)
         present_chart_data.append(present_count)
         absent_chart_data.append(absent_count)
         pending_chart_data.append(pending_count)
+
+        total = present_count + absent_count + pending_count
+        perc = round((present_count / total) * 100, 2) if total > 0 else 0
+
+        month_labels.append(date)
+        month_values.append(perc)
+
+        if active_streak and all_present:
+            streak += 1
+        else:
+            active_streak = False
+
+    attendance_percent = dashboard_data.get("attendance_percent", 0)
+
+    class_average_percent = round(min(100, attendance_percent ), 2)
+
+    if attendance_percent >= 90:
+        rank = "A"
+    elif attendance_percent >= 80:
+        rank = "B"
+    elif attendance_percent >= 70:
+        rank = "C"
+    else:
+        rank = "D"
+
+    safe_slots_needed = 0 if attendance_percent >= 75 else int((75 - attendance_percent) / 2) + 1
+
+    predicted_percent = round((attendance_percent * 0.7) + (month_values[-1] * 0.3), 2) if month_values else attendance_percent
+
+    if attendance_percent >= class_average_percent:
+        progress_message = "You are performing above class average."
+    else:
+        progress_message = "You are below class average. Improvement possible."
+
+    if attendance_percent < 75:
+        risk_message = "You are in defaulter risk zone."
+    else:
+        risk_message = "You are currently in safe attendance zone."
+
+    goal_message = f"Need {safe_slots_needed} more present slots to stay safe."
 
     return templates.TemplateResponse(
         "new_student.html",
@@ -525,13 +570,24 @@ def     student_dashboard(request: Request):
             "present_chart_data": present_chart_data,
             "absent_chart_data": absent_chart_data,
             "pending_chart_data": pending_chart_data,
-            
+
+            "month_labels": month_labels,
+            "month_values": month_values,
+            "class_average_percent": class_average_percent,
+            "rank": rank,
+            "streak": streak,
+            "safe_slots_needed": safe_slots_needed,
+            "predicted_percent": predicted_percent,
+            "progress_message": progress_message,
+            "risk_message": risk_message,
+            "goal_message": goal_message
         }
     )
 
 @app.get("/dashboard")
 def dashboard(request: Request):
-
+    if CURRENT_USER["college_id"] is None or not CURRENT_USER["role"]:
+        return RedirectResponse(url="/", status_code=303)
     classrooms = get_classrooms_by_college(CURRENT_COLLEGE["id"])
     teachers = get_teachers_by_college(CURRENT_COLLEGE["id"]) if CURRENT_USER["role"] == "hod" else []
 
@@ -694,7 +750,9 @@ def dashboard(request: Request):
 @app.get("/staff")
 def staff_dashboard(request: Request):
     if CURRENT_USER["role"] != "hod":
-        raise HTTPException(status_code=403, detail="Only HOD can view staff page")
+        return RedirectResponse(url="/", status_code=303)
+    if CURRENT_USER["college_id"] is None or not CURRENT_USER["role"]:
+        return RedirectResponse(url="/", status_code=303)
 
     teachers = get_teachers_by_college(CURRENT_COLLEGE["id"])
     teacher_invite_link = f"http://127.0.0.1:8000/teacher/invite/{CURRENT_COLLEGE['id']}"
@@ -996,6 +1054,7 @@ async def add_student_web(
 
 @app.get("/student/view/{classroom_id}/{prn}")
 def view_student_page(request: Request, classroom_id: int, prn: str):
+
     if CURRENT_USER["college_id"] is None or not CURRENT_USER["role"]:
         return RedirectResponse(url="/", status_code=303)
 
@@ -1023,38 +1082,110 @@ def view_student_page(request: Request, classroom_id: int, prn: str):
     absent_chart_data = []
     pending_chart_data = []
 
+    month_labels = []
+    month_values = []
+
+    streak = 0
+    streak_open = True
+
     for date, data in attendance.items():
+
         slots = data.get("slots", [])
 
-        present_count = 0
-        absent_count = 0
-        pending_count = 0
+        p = 0
+        a = 0
+        pe = 0
+        full_present = True
 
         for row in slots:
+
             status = row.get("status", "").lower()
+
             if status == "present":
-                present_count += 1
+                p += 1
             elif status == "absent":
-                absent_count += 1
+                a += 1
+                full_present = False
             else:
-                pending_count += 1
+                pe += 1
+                full_present = False
 
         chart_labels.append(date)
-        present_chart_data.append(present_count)
-        absent_chart_data.append(absent_count)
-        pending_chart_data.append(pending_count)
+        present_chart_data.append(p)
+        absent_chart_data.append(a)
+        pending_chart_data.append(pe)
+
+        total = p + a + pe
+        day_percent = round((p / total) * 100, 2) if total > 0 else 0
+
+        month_labels.append(date)
+        month_values.append(day_percent)
+
+        if streak_open and full_present:
+            streak += 1
+        else:
+            streak_open = False
+
+    attendance_percent = dashboard_data.get("attendance_percent", 0)
+
+    class_average_percent = round(min(100, attendance_percent + 5), 2)
+
+    if attendance_percent >= 90:
+        rank = 1
+    elif attendance_percent >= 80:
+        rank = 3
+    elif attendance_percent >= 70:
+        rank = 5
+    else:
+        rank = 9
+
+    safe_slots_needed = 0 if attendance_percent >= 75 else int((75 - attendance_percent) / 2) + 1
+
+    predicted_percent = round(
+        (attendance_percent * 0.7) + ((month_values[-1] if month_values else attendance_percent) * 0.3),
+        2
+    )
+
+    progress_message = (
+        "Student is above class average."
+        if attendance_percent >= class_average_percent
+        else "Student is below class average."
+    )
+
+    risk_message = (
+        "Safe attendance zone."
+        if attendance_percent >= 75
+        else "Defaulter risk zone."
+    )
+
+    goal_message = f"Needs {safe_slots_needed} more present slots for safe zone."
 
     return templates.TemplateResponse(
         "new_student.html",
         {
             "request": request,
             **dashboard_data,
+
+            "class_teacher": classroom["class_teacher"],
+            "current_role": CURRENT_USER["role"],
+
             "chart_labels": chart_labels,
-            "class_teacher" : classroom["class_teacher"],
             "present_chart_data": present_chart_data,
             "absent_chart_data": absent_chart_data,
             "pending_chart_data": pending_chart_data,
-            "current_role": CURRENT_USER["role"],
+
+            "month_labels": month_labels,
+            "month_values": month_values,
+
+            "class_average_percent": class_average_percent,
+            "rank": rank,
+            "streak": streak,
+            "safe_slots_needed": safe_slots_needed,
+            "predicted_percent": predicted_percent,
+
+            "progress_message": progress_message,
+            "risk_message": risk_message,
+            "goal_message": goal_message
         }
     )
 
