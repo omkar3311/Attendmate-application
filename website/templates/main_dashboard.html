@@ -373,6 +373,140 @@
                 transform: translateY(0) scale(1);
             }
         }
+
+        .section{
+            margin-top:40px;
+        }
+
+        .container{
+            max-width:100%;
+            width:100%;
+            margin:auto;
+            padding:30px;
+        }
+
+        .grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+            gap:22px;
+            width:100%;
+            align-items:stretch;
+        }
+
+        .graphcard{
+            width:100%;
+            min-height:440px;
+            padding:24px;
+            border-radius:18px;
+            background:#fff;
+            box-shadow:0 8px 24px rgba(0,0,0,0.08);
+            display:flex;
+            flex-direction:column;
+        }
+
+        .chart-title{
+            font-size:20px;
+            font-weight:700;
+            color:#1e293b;
+            margin-bottom:16px;
+        }
+
+        canvas{
+            width:100% !important;
+            height:340px !important;
+            flex:1;
+        }
+
+        @media (min-width:1600px){
+            .container{
+                padding:35px 45px;
+            }
+
+            .grid{
+                grid-template-columns:repeat(3,1fr);
+            }
+        }
+
+        @media (min-width:1100px) and (max-width:1599px){
+            .grid{
+                grid-template-columns:repeat(2,1fr);
+            }
+        }
+
+        @media (max-width:1099px){
+            .grid{
+                grid-template-columns:1fr;
+            }
+        }
+
+        @media (max-width:768px){
+            .container{
+                padding:18px;
+            }
+
+            .graphcard{
+                min-height:390px;
+            }
+
+            canvas{
+                height:280px !important;
+            }
+        }
+
+        .graphcard{
+            background:#ffffff;
+            border-radius:18px;
+            padding:24px;
+            box-shadow:0 8px 24px rgba(0,0,0,0.08);
+            min-height:420px;
+            display:flex;
+            flex-direction:column;
+            justify-content:flex-start;
+            transition:0.25s ease;
+        }
+
+        .graphcard:hover{
+            transform:translateY(-5px);
+            box-shadow:0 14px 30px rgba(0,0,0,0.12);
+        }
+
+        .chart-title{
+            font-size:20px;
+            font-weight:700;
+            color:#1e293b;
+            margin-bottom:18px;
+        }
+
+
+
+        .alert-card{
+            background:#fff5f5;
+            border-left:6px solid #dc2626;
+            min-height:auto;
+        }
+
+        .alert-card h3{
+            color:#dc2626;
+            font-size:20px;
+            margin-bottom:10px;
+        }
+
+        .alert-card p{
+            color:#7f1d1d;
+            font-weight:600;
+            line-height:1.5;
+        }
+
+        .alert-title{
+            color:#dc2626;
+        }
+
+        .section-title{
+            font-size:28px;
+            font-weight:800;
+            margin-bottom:22px;
+            color:#111827;
+        }
     </style>
 </head>
 <body>
@@ -385,6 +519,7 @@
     <div class="container">
 
         <div class="topbar">
+            
             <div class="topbar-header">
                 <div class="topbar-info">
                     <h1>{{ college.college_name | title }} Dashboard</h1>
@@ -419,6 +554,81 @@
             </div>
         </div>
         {% endif %}
+        <div class="section">
+    <h2 class="section-title">Analytics Overview</h2>
+
+    <div class="grid">
+
+        <div class="card">
+            <h3>{{ overall_percent }}%</h3>
+            <p>Overall Attendance</p>
+        </div>
+
+        <div class="card">
+            <h3>{{ student_count }}</h3>
+            <p>Total Students</p>
+        </div>
+
+        <div class="card">
+            <h3>{{ defaulter_count }}</h3>
+            <p>Total Defaulters</p>
+        </div>
+
+        <div class="card">
+            <h3>{{ best_class.class }}</h3>
+            <p>Best Performing Class</p>
+        </div>
+
+        <div class="card">
+            <h3>{{ worst_class.class }}</h3>
+            <p>Lowest Performing Class</p>
+        </div>
+
+        <div class="card">
+            <h3>{{ avg_class_attendance }}%</h3>
+            <p>Average Class Attendance</p>
+        </div>
+
+        </div>
+    </div>
+
+        <div class="section">
+            <h2 class="section-title">AI Insights</h2>
+
+            <div class="grid">
+
+        <div class="card">
+            <h3>{{ prediction }}%</h3>
+            <p>Predicted Next Attendance</p>
+            </div>
+
+        <div class="card">
+            <h3>{{ teacher_board[0].teacher if teacher_board else "N/A" }}</h3>
+            <p>Top Teacher</p>
+        </div>
+
+        <div class="card">
+            <h3>{{ best_class.class }}</h3>
+            <p>Top Ranked Class</p>
+        </div>
+
+        </div>
+    </div>
+
+        <div class="section">
+            <h2 class="section-title alert-title">Smart Alerts</h2>
+
+            <div class="grid">
+
+                {% for item in alerts %}
+                <div class="card alert-card">
+                <h3>⚠ Warning</h3>
+                <p>{{ item }}</p>
+            </div>
+        {% endfor %}
+
+        </div>
+        </div>
 
         <div class="section">
             <h2 class="section-title">Classrooms</h2>
@@ -472,12 +682,119 @@
 
     </div>
 
+    <div class="section">
+        <h2 class="section-title">Attendance Intelligence</h2>
+
+        <div class="grid">
+
+            <div class="graphcard">
+                <div class="chart-title">Class Attendance Ranking</div>
+                <canvas id="classChart"></canvas>
+            </div>
+
+            <div class="graphcard">
+                <div class="chart-title">Overall Attendance Ratio</div>
+                <canvas id="pieChart"></canvas>
+            </div>
+
+            <div class="graphcard">
+                <div class="chart-title">Defaulter Comparison</div>
+                <canvas id="defChart"></canvas>
+            </div>
+
+            <div class="graphcard">
+                <div class="chart-title">Daily Attendance Trend</div>
+                <canvas id="trendChart"></canvas>
+            </div>
+
+            <div class="graphcard">
+                <div class="chart-title">Teacher Performance</div>
+                <canvas id="teacherChart"></canvas>
+            </div>
+
+        </div>
     </div>
+
+    
     <div class="footer">
         © 2026 AttendMate
     </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
+const labels = {{ class_performance | map(attribute='class') | list | safe }};
+const data = {{ class_performance | map(attribute='percent') | list | safe }};
+const defaulters = {{ class_performance | map(attribute='defaulters') | list | safe }};
+
+new Chart(document.getElementById("classChart"), {
+type: "bar",
+data: {
+labels: labels,
+datasets: [{
+label: "Attendance %",
+data: data,
+backgroundColor:"#2563eb"
+}]
+},
+options:{responsive:true}
+});
+
+new Chart(document.getElementById("pieChart"), {
+type: "doughnut",
+data: {
+labels:["Present","Absent"],
+datasets:[{
+data:[{{ overall_percent }}, {{ 100-overall_percent }}]
+}]
+}
+});
+
+new Chart(document.getElementById("defChart"), {
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Defaulters",
+data:defaulters,
+fill:false,
+borderWidth:3
+}]
+}
+});
+
+const trendLabels = {{ trend_labels | safe }};
+const trendValues = {{ trend_values | safe }};
+
+new Chart(document.getElementById("trendChart"),{
+type:"line",
+data:{
+labels:trendLabels,
+datasets:[{
+label:"Daily Attendance %",
+data:trendValues,
+borderWidth:3,
+fill:false
+}]
+}
+});
+
+const teacherLabels = {{ teacher_board | map(attribute='teacher') | list | safe }};
+const teacherValues = {{ teacher_board | map(attribute='percent') | list | safe }};
+
+new Chart(document.getElementById("teacherChart"),{
+type:"radar",
+data:{
+labels:teacherLabels,
+datasets:[{
+label:"Teacher Score",
+data:teacherValues
+}]
+}
+});
+
+
+
 const toggle = document.getElementById("chatbot-toggle");
 const container = document.getElementById("chatbot-container");
 const closeBtn = document.getElementById("chatbot-close");

@@ -491,7 +491,7 @@ def     student_dashboard(request: Request):
         if isinstance(data, dict):
             slots = data.get("slots", [])
         else:
-            slots = data  # old format
+            slots = data  
 
         present_count = 0
         absent_count = 0
@@ -531,6 +531,7 @@ def     student_dashboard(request: Request):
 
 @app.get("/dashboard")
 def dashboard(request: Request):
+
     classrooms = get_classrooms_by_college(CURRENT_COLLEGE["id"])
     teachers = get_teachers_by_college(CURRENT_COLLEGE["id"]) if CURRENT_USER["role"] == "hod" else []
 
@@ -538,28 +539,131 @@ def dashboard(request: Request):
 
     total_students = 0
     total_defaulters = 0
+    total_present = 0
+    total_absent = 0
+
+    class_performance = []
+    teacher_stats = {}
+    slot_stats = {}
+    daily_map = {}
 
     for classroom in classrooms:
+
         classroom_id = classroom["id"]
 
         students = get_students_from_classroom_table(classroom["classroom_table"])
         defaulters = defaulter_students(classroom["college_id"], classroom_id) or []
 
-        defaulter_map = {d["prn"]: d["defaulter"] for d in defaulters}
-
-        for student in students:
-            student["defaulter"] = defaulter_map.get(student.get("prn"), "NO")
-
         student_count = len(students)
-        defaulter_count = sum(1 for s in students if s.get("defaulter") == "YES")
+        defaulter_count = len([d for d in defaulters if d["defaulter"] == "YES"])
 
         total_students += student_count
         total_defaulters += defaulter_count
+
+        attendance_rows = get_attendance_of_class(classroom["attendance_table"])
+        rows = attendance_rows.data or []
+
+        present = 0
+        absent = 0
+
+        for row in rows:
+
+            row_date = str(row.get("attendance_date"))
+
+            if row_date not in daily_map:
+                daily_map[row_date] = {"present":0,"absent":0}
+
+            for key, value in row.items():
+
+                if key.startswith("slot_") and not key.endswith("_teacher"):
+
+                    val = str(value).lower()
+
+                    teacher_name = row.get(f"{key}_teacher", "Unknown")
+
+                    if key not in slot_stats:
+                        slot_stats[key] = {"present":0,"absent":0}
+
+                    if teacher_name not in teacher_stats:
+                        teacher_stats[teacher_name] = {"present":0,"absent":0}
+
+                    if val == "present":
+                        present += 1
+                        total_present += 1
+                        daily_map[row_date]["present"] += 1
+                        slot_stats[key]["present"] += 1
+                        teacher_stats[teacher_name]["present"] += 1
+
+                    elif val == "absent":
+                        absent += 1
+                        total_absent += 1
+                        daily_map[row_date]["absent"] += 1
+                        slot_stats[key]["absent"] += 1
+                        teacher_stats[teacher_name]["absent"] += 1
+
+        total = present + absent
+        percent = round((present / total * 100), 2) if total > 0 else 0
+
+        class_performance.append({
+            "class": classroom["classroom_name"],
+            "percent": percent,
+            "defaulters": defaulter_count
+        })
 
         classroom_data[classroom_id] = {
             "student_count": student_count,
             "defaulter_count": defaulter_count
         }
+
+    overall_percent = round(
+        (total_present / (total_present + total_absent) * 100), 2
+    ) if (total_present + total_absent) > 0 else 0
+
+    best_class = max(class_performance, key=lambda x:x["percent"], default=None)
+    worst_class = min(class_performance, key=lambda x:x["percent"], default=None)
+
+    avg_class_attendance = round(
+        sum(x["percent"] for x in class_performance) / len(class_performance),2
+    ) if class_performance else 0
+
+    trend_labels = sorted(daily_map.keys())
+    trend_values = []
+
+    for d in trend_labels:
+        p = daily_map[d]["present"]
+        a = daily_map[d]["absent"]
+        total = p + a
+        perc = round((p/total*100),2) if total > 0 else 0
+        trend_values.append(perc)
+
+    teacher_board = []
+
+    for t,v in teacher_stats.items():
+        total = v["present"] + v["absent"]
+        perc = round((v["present"]/total*100),2) if total>0 else 0
+        teacher_board.append({"teacher":t,"percent":perc})
+
+    teacher_board = sorted(teacher_board,key=lambda x:x["percent"],reverse=True)
+
+    slot_board = []
+
+    for s,v in slot_stats.items():
+        total = v["present"] + v["absent"]
+        perc = round((v["present"]/total*100),2) if total>0 else 0
+        slot_board.append({"slot":s,"percent":perc})
+
+    prediction = round(sum(trend_values[-5:]) / len(trend_values[-5:]),2) if trend_values else overall_percent
+
+    alerts = []
+
+    if overall_percent < 75:
+        alerts.append("Overall attendance below 75%")
+
+    if total_defaulters > 10:
+        alerts.append("High defaulter count detected")
+
+    if worst_class:
+        alerts.append(f"Needs attention: {worst_class['class']}")
 
     return templates.TemplateResponse(
         "main_dashboard.html",
@@ -567,12 +671,23 @@ def dashboard(request: Request):
             "request": request,
             "college": CURRENT_COLLEGE,
             "classrooms": classrooms,
-            "classroom_data": classroom_data, 
+            "classroom_data": classroom_data,
             "classroom_count": len(classrooms),
             "student_count": total_students,
             "defaulter_count": total_defaulters,
             "teacher_count": len(teachers),
-            "current_role": CURRENT_USER["role"]
+            "current_role": CURRENT_USER["role"],
+            "overall_percent": overall_percent,
+            "best_class": best_class,
+            "worst_class": worst_class,
+            "avg_class_attendance": avg_class_attendance,
+            "class_performance": class_performance,
+            "trend_labels": trend_labels,
+            "trend_values": trend_values,
+            "teacher_board": teacher_board[:5],
+            "slot_board": slot_board,
+            "prediction": prediction,
+            "alerts": alerts
         }
     )
 
@@ -835,6 +950,7 @@ def view_student_page(request: Request, classroom_id: int, prn: str):
             "request": request,
             **dashboard_data,
             "chart_labels": chart_labels,
+            "class_teacher" : classroom["class_teacher"],
             "present_chart_data": present_chart_data,
             "absent_chart_data": absent_chart_data,
             "pending_chart_data": pending_chart_data,
